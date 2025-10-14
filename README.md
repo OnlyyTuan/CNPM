@@ -1,25 +1,38 @@
-# 🛠️ Cài đặt hệ thống
+# 🚍 Hệ thống Quản lý Xe Buýt
 
-## Bước 1: 
+## 🛠️ Yêu cầu cài đặt
 
-- **Node.js 18+** ([https://nodejs.org/](https://nodejs.org/))
+- **Node.js 18+**: [https://nodejs.org/](https://nodejs.org/)  
+- **MySQL**: [https://dev.mysql.com/downloads/windows/installer/](https://dev.mysql.com/downloads/windows/installer/)  
+- **Git** (Git Bash): [https://git-scm.com/](https://git-scm.com/)  
 
-- **GitBash** ([https://git-scm.com/](https://git-scm.com/))
+---
 
-## Bước 2:
+## ⚡ Cài đặt project
 
-Thực hiện các lệnh sau trong Terminal hoặc gitbash:
-
-
-
-Sử dụng `git clone` để tải mã nguồn về máy:
+Mở Terminal hoặc Git Bash và chạy các lệnh sau:
 
 ```bash
-git clone [(https://github.com/OnlyyTuan/CNPM)](https://github.com/OnlyyTuan/CNPM)
+# Clone source code về máy
+git clone https://github.com/OnlyyTuan/CNPM.git
 cd CNPM
 
+# Cài đặt backend
 cd backend
 npm install
 
-cd frontend
+# Cài đặt frontend
+cd ../frontend
 npm install
+```
+## 🗄️ Cấu hình cơ sở dữ liệu
+
+### 1️⃣ Tạo database
+
+```sql
+mysql -u root -p
+CREATE DATABASE smartschoolbus;
+exit
+
+mysql -u root -p smartschoolbus < backend/database.sql
+```
