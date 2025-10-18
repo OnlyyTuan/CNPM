@@ -1,9 +1,10 @@
 -- ===================================
 -- BẢNG THỰC THỂ (ENTITIES)
 -- ===================================
-DROP DATABASE IF EXISTS smartschoolbus;
-CREATE DATABASE smartschoolbus;
+CREATE DATABASE IF NOT EXISTS smartschoolbus;
 USE smartschoolbus;
+
+
 
 CREATE TABLE `Location` (
     `id` VARCHAR(255) NOT NULL, -- Mã định danh vị trí (Khóa chính)
