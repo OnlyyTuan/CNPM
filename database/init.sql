@@ -1,9 +1,9 @@
 -- ===================================
 -- BẢNG THỰC THỂ (ENTITIES)
 -- ===================================
-CREATE DATABASE IF NOT EXISTS smartschoolbus;
+DROP DATABASE IF EXISTS smartschoolbus;
+CREATE DATABASE smartschoolbus;
 USE smartschoolbus;
-
 
 
 CREATE TABLE `Location` (
