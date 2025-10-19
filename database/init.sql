@@ -5,7 +5,6 @@ DROP DATABASE IF EXISTS smartschoolbus;
 CREATE DATABASE smartschoolbus;
 USE smartschoolbus;
 
-
 CREATE TABLE `Location` (
     `id` VARCHAR(255) NOT NULL, -- Mã định danh vị trí (Khóa chính)
     `name` VARCHAR(255),        -- Tên điểm (ví dụ: Trường A, Điểm đón số 3)
@@ -55,79 +54,96 @@ CREATE TABLE `Student` (
     `id` VARCHAR(255) NOT NULL, -- Mã học sinh (Khóa chính)
     `name` VARCHAR(255),        -- Họ và tên học sinh
     `class` VARCHAR(50),        -- Lớp học
-    `grade` INT,                -- Khối học
-    `parentContact` VARCHAR(50),-- Số điện thoại/email liên hệ của phụ huynh
-    `status` VARCHAR(50),       -- Trạng thái (ví dụ: WAITING, PICKED_UP, ABSENT)
-    `assignedBus_id` VARCHAR(255), -- Mã xe buýt được chỉ định (Khóa ngoại tham chiếu đến Bus)
+    `grade` INT,                -- Khối lớp (ví dụ: 1, 2, 3...)
+    `parentContact` VARCHAR(20),-- Số điện thoại phụ huynh
+    `status` VARCHAR(50),       -- Trạng thái học sinh (ví dụ: ON_BUS, AT_SCHOOL)
+    `assignedBus_id` VARCHAR(255), -- Mã xe được phân công (Khóa ngoại tham chiếu đến Bus)
     `pickupLocation_id` VARCHAR(255), -- Mã điểm đón (Khóa ngoại tham chiếu đến Location)
-    `dropoffLocation_id` VARCHAR(255),-- Mã điểm trả (Khóa ngoại tham chiếu đến Location)
+    `dropoffLocation_id` VARCHAR(255), -- Mã điểm trả (Khóa ngoại tham chiếu đến Location)
+    `parent_id` VARCHAR(255),   -- Mã phụ huynh (Khóa ngoại tham chiếu đến Parent, cho phép 1 parent có nhiều student)
     PRIMARY KEY (`id`)          -- Định nghĩa Khóa chính
 );
-
--- ===================================
--- BẢNG QUẢN LÝ VÀ LIÊN KẾT
--- ===================================
 
 CREATE TABLE `Schedule` (
     `id` VARCHAR(255) NOT NULL, -- Mã lịch trình (Khóa chính)
-    `date` DATE,                -- Ngày chạy lịch trình
-    `time` TIME,                -- Giờ chạy lịch trình
-    `status` VARCHAR(50),       -- Trạng thái lịch trình (ví dụ: SCHEDULED, ACTIVE, COMPLETED)
-    `bus_id` VARCHAR(255) NOT NULL, -- Mã xe sử dụng (Khóa ngoại)
-    `driver_id` VARCHAR(255) NOT NULL, -- Mã tài xế được giao (Khóa ngoại)
-    `route_id` VARCHAR(255) NOT NULL, -- Mã tuyến đường theo (Khóa ngoại)
+    `date` DATE,                -- Ngày diễn ra lịch trình
+    `time` TIME,                -- Thời gian bắt đầu
+    `status` VARCHAR(50),       -- Trạng thái lịch trình (ví dụ: PLANNED, ONGOING)
+    `bus_id` VARCHAR(255),      -- Mã xe sử dụng (Khóa ngoại tham chiếu đến Bus)
+    `driver_id` VARCHAR(255),   -- Mã tài xế (Khóa ngoại tham chiếu đến Driver)
+    `route_id` VARCHAR(255),    -- Mã tuyến đường (Khóa ngoại tham chiếu đến Route)
     PRIMARY KEY (`id`)          -- Định nghĩa Khóa chính
 );
 
--- Bảng liên kết chi tiết tuyến đường (Mối quan hệ n:m giữa Route và Location)
-CREATE TABLE `Route_Stop` (
-    `route_id` VARCHAR(255) NOT NULL, -- Mã tuyến đường (Thành phần Khóa chính & Khóa ngoại)
-    `location_id` VARCHAR(255) NOT NULL, -- Mã điểm dừng (Thành phần Khóa chính & Khóa ngoại)
-    `stop_order` INT NOT NULL,  -- Thứ tự điểm dừng trên tuyến
-    PRIMARY KEY (`route_id`, `location_id`) -- Khóa chính kép
-);
-
--- Bảng liên kết chi tiết lịch trình học sinh (Mối quan hệ n:m giữa Schedule và Student)
-CREATE TABLE `Schedule_Student` (
-    `schedule_id` VARCHAR(255) NOT NULL, -- Mã lịch trình (Thành phần Khóa chính & Khóa ngoại)
-    `student_id` VARCHAR(255) NOT NULL, -- Mã học sinh (Thành phần Khóa chính & Khóa ngoại)
-    `pickup_status` VARCHAR(50), -- Tình trạng đón (ví dụ: ON_BUS, MISSED, ABSENT)
-    PRIMARY KEY (`schedule_id`, `student_id`) -- Khóa chính kép
-);
-
--- Bảng ghi lại lịch sử vị trí (Theo dõi GPS)
-CREATE TABLE `LocationLog` (
-    `id` INT AUTO_INCREMENT NOT NULL, -- Mã theo dõi (Khóa chính tự tăng)
-    `bus_id` VARCHAR(255) NOT NULL, -- Mã xe được theo dõi (Khóa ngoại)
-    `timestamp` TIMESTAMP NOT NULL, -- Thời gian ghi nhận
-    `latitude` DECIMAL(10, 8),      -- Vĩ độ tại thời điểm đó
-    `longitude` DECIMAL(11, 8),     -- Kinh độ tại thời điểm đó
-    `speed` DECIMAL(5, 2),          -- Vận tốc tại thời điểm đó
-    PRIMARY KEY (`id`)              -- Định nghĩa Khóa chính
-);
-
--- Bảng tin nhắn/thông báo
 CREATE TABLE `Message` (
     `id` INT AUTO_INCREMENT NOT NULL, -- Mã tin nhắn (Khóa chính tự tăng)
-    `sender_type` VARCHAR(50),      -- Loại người gửi (ví dụ: 'SYSTEM', 'DRIVER')
-    `sender_id` VARCHAR(255),       -- Mã định danh người gửi
-    `recipient_id` VARCHAR(255) NOT NULL, -- Mã định danh người nhận (ví dụ: ID học sinh/phụ huynh)
+    `sender_type` VARCHAR(50),  -- Loại người gửi (DRIVER, PARENT, SYSTEM)
+    `sender_id` VARCHAR(255),   -- Mã người gửi (tùy loại)
+    `recipient_id` VARCHAR(255) NOT NULL, -- Mã người nhận (học sinh hoặc phụ huynh)
     `message_content` TEXT NOT NULL, -- Nội dung tin nhắn
-    `timestamp` TIMESTAMP NOT NULL, -- Thời gian gửi
-    `is_read` TINYINT(1) DEFAULT 0, -- Trạng thái đọc (0: Chưa đọc, 1: Đã đọc)
-    PRIMARY KEY (`id`)              -- Định nghĩa Khóa chính
+    `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Thời gian gửi
+    `is_read` BOOLEAN DEFAULT FALSE, -- Trạng thái đã đọc
+    PRIMARY KEY (`id`)          -- Định nghĩa Khóa chính
+);
+
+CREATE TABLE `Route_Stop` (
+    `route_id` VARCHAR(255) NOT NULL, -- Mã tuyến đường (Khóa ngoại tham chiếu đến Route)
+    `location_id` VARCHAR(255) NOT NULL, -- Mã điểm dừng (Khóa ngoại tham chiếu đến Location)
+    `stop_order` INT,           -- Thứ tự dừng (ví dụ: 1, 2, 3...)
+    PRIMARY KEY (`route_id`, `location_id`) -- Khóa chính composite
+);
+
+CREATE TABLE `Schedule_Student` (
+    `schedule_id` VARCHAR(255) NOT NULL, -- Mã lịch trình (Khóa ngoại tham chiếu đến Schedule)
+    `student_id` VARCHAR(255) NOT NULL, -- Mã học sinh (Khóa ngoại tham chiếu đến Student)
+    `pickup_status` VARCHAR(50), -- Trạng thái đón (ví dụ: PICKED_UP, MISSED)
+    PRIMARY KEY (`schedule_id`, `student_id`) -- Khóa chính composite
+);
+
+CREATE TABLE `LocationLog` (
+    `id` INT AUTO_INCREMENT NOT NULL, -- Mã log (Khóa chính tự tăng)
+    `bus_id` VARCHAR(255) NOT NULL, -- Mã xe (Khóa ngoại tham chiếu đến Bus)
+    `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Thời điểm ghi nhận
+    `latitude` DECIMAL(10, 8),  -- Vĩ độ
+    `longitude` DECIMAL(11, 8), -- Kinh độ
+    `speed` DECIMAL(5, 2),      -- Vận tốc tại thời điểm
+    PRIMARY KEY (`id`)          -- Định nghĩa Khóa chính
+);
+
+-- Thêm bảng user để quản lý tài khoản và phân loại vai trò (admin, driver, parent)
+CREATE TABLE `user` (
+    `id` VARCHAR(255) NOT NULL, -- Mã định danh người dùng (Khóa chính)
+    `username` VARCHAR(50) UNIQUE NOT NULL, -- Tên đăng nhập duy nhất
+    `password` VARCHAR(255) NOT NULL, -- Mật khẩu (hashed)
+    `email` VARCHAR(255) UNIQUE NOT NULL, -- Email duy nhất
+    `role` VARCHAR(50) NOT NULL, -- Vai trò: ADMIN, DRIVER, PARENT
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Thời gian tạo
+    `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- Thời gian cập nhật
+    `reset_token` VARCHAR(255) DEFAULT NULL, -- Token reset password
+    `reset_expiry` DATETIME DEFAULT NULL, -- Thời hạn reset password (sử dụng DATETIME thay vì TIMESTAMP)
+    PRIMARY KEY (`id`) -- Định nghĩa Khóa chính
+);
+
+-- Thêm bảng parent để quản lý thông tin phụ huynh, liên kết với user và student
+CREATE TABLE `parent` (
+    `id` VARCHAR(255) NOT NULL, -- Mã định danh phụ huynh (Khóa chính)
+    `name` VARCHAR(255), -- Họ và tên phụ huynh
+    `phone` VARCHAR(20), -- Số điện thoại
+    `address` VARCHAR(255), -- Địa chỉ
+    `user_id` VARCHAR(255) NOT NULL, -- Mã người dùng (Khóa ngoại tham chiếu đến user)
+    PRIMARY KEY (`id`), -- Định nghĩa Khóa chính
+    UNIQUE (`user_id`) -- Mỗi user chỉ có một parent (nếu role PARENT)
 );
 
 -- ===================================
--- ĐỊNH NGHĨA KHÓA NGOẠI (FOREIGN KEYS)
+-- KHÓA NGOẠI (FOREIGN KEYS)
 -- ===================================
--- Thiết lập mối quan hệ giữa các bảng
 
 -- Khóa ngoại trên bảng DRIVER
 ALTER TABLE `Driver`
 ADD CONSTRAINT `FK_Driver_Bus`
 FOREIGN KEY (`currentBus_id`) REFERENCES `Bus` (`id`) -- Tài xế đang lái xe nào
-ON DELETE SET NULL ON UPDATE CASCADE; -- Nếu xe bị xóa, trường này sẽ là NULL
+ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- Khóa ngoại trên bảng BUS
 ALTER TABLE `Bus`
@@ -151,7 +167,10 @@ FOREIGN KEY (`pickupLocation_id`) REFERENCES `Location` (`id`) -- Điểm đón 
 ON DELETE RESTRICT ON UPDATE CASCADE, -- Không cho phép xóa điểm đón nếu có học sinh dùng
 ADD CONSTRAINT `FK_Student_DropoffLocation`
 FOREIGN KEY (`dropoffLocation_id`) REFERENCES `Location` (`id`) -- Điểm trả của học sinh
-ON DELETE RESTRICT ON UPDATE CASCADE; -- Không cho phép xóa điểm trả nếu có học sinh dùng
+ON DELETE RESTRICT ON UPDATE CASCADE, -- Không cho phép xóa điểm trả nếu có học sinh dùng
+ADD CONSTRAINT `FK_Student_Parent`
+FOREIGN KEY (`parent_id`) REFERENCES `parent` (`id`) -- Học sinh thuộc phụ huynh nào
+ON DELETE SET NULL ON UPDATE CASCADE; -- Cho phép 1 parent có nhiều student
 
 -- Khóa ngoại trên bảng SCHEDULE (Lịch trình)
 ALTER TABLE `Schedule`
@@ -187,4 +206,10 @@ ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE `LocationLog`
 ADD CONSTRAINT `FK_LocationLog_Bus`
 FOREIGN KEY (`bus_id`) REFERENCES `Bus` (`id`) -- Ghi lại vị trí của xe nào
+ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Khóa ngoại trên bảng PARENT
+ALTER TABLE `parent`
+ADD CONSTRAINT `FK_Parent_User`
+FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) -- Phụ huynh liên kết với tài khoản user (role PARENT)
 ON DELETE CASCADE ON UPDATE CASCADE;
