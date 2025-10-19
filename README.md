@@ -30,9 +30,11 @@ npm install
 ### 1️⃣ Tạo database
 
 ```sql
+mysql -u root -p <database/init.sql
+
 mysql -u root -p
+
 CREATE DATABASE smartschoolbus;
 exit
 
-mysql -u root -p smartschoolbus < backend/database.sql
 ```
