@@ -213,3 +213,139 @@ ALTER TABLE `parent`
 ADD CONSTRAINT `FK_Parent_User`
 FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) -- Phụ huynh liên kết với tài khoản user (role PARENT)
 ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- ===================================
+-- DỮ LIỆU MẪU (SAMPLE DATA)
+-- ===================================
+
+-- Thêm dữ liệu vào bảng USER
+-- Mật khẩu mẫu: "password123" (trong thực tế cần hash, ở đây dùng plaintext cho demo)
+INSERT INTO `user` (`id`, `username`, `password`, `email`, `role`) VALUES
+('USER001', 'admin', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'admin@schoolbus.com', 'ADMIN'),
+('USER002', 'driver1', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'driver1@schoolbus.com', 'DRIVER'),
+('USER003', 'driver2', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'driver2@schoolbus.com', 'DRIVER'),
+('USER004', 'driver3', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'driver3@schoolbus.com', 'DRIVER'),
+('USER005', 'parent1', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'nguyenvana@gmail.com', 'PARENT'),
+('USER006', 'parent2', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'tranthib@gmail.com', 'PARENT'),
+('USER007', 'parent3', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'lethic@gmail.com', 'PARENT'),
+('USER008', 'parent4', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'phamvand@gmail.com', 'PARENT'),
+('USER009', 'parent5', '$2b$10$8JqH.ZxHZ9qZ3Z3Z3Z3Z3.ZxHZ9qZ3Z3Z3Z3Z3ZxHZ9qZ3Z3Z3Z3Z', 'hoangthie@gmail.com', 'PARENT');
+
+-- Thêm dữ liệu vào bảng LOCATION
+INSERT INTO `Location` (`id`, `name`, `address`, `latitude`, `longitude`, `type`, `estimatedTime`) VALUES
+('LOC001', 'Trường Tiểu Học ABC', '123 Đường Lê Lợi, Quận 1, TP.HCM', 10.77297000, 106.69790000, 'SCHOOL', '08:00:00'),
+('LOC002', 'Điểm đón Nguyễn Văn A', '45 Đường Nguyễn Huệ, Quận 1, TP.HCM', 10.77463000, 106.70127000, 'PICKUP_POINT', '06:45:00'),
+('LOC003', 'Điểm đón Trần Thị B', '78 Đường Lê Thánh Tôn, Quận 1, TP.HCM', 10.77589000, 106.70234000, 'PICKUP_POINT', '06:50:00'),
+('LOC004', 'Điểm đón Lê Thị C', '12 Đường Pasteur, Quận 3, TP.HCM', 10.77832000, 106.69345000, 'PICKUP_POINT', '06:55:00'),
+('LOC005', 'Điểm đón Phạm Văn D', '56 Đường Hai Bà Trưng, Quận 3, TP.HCM', 10.78124000, 106.69521000, 'PICKUP_POINT', '07:00:00'),
+('LOC006', 'Điểm đón Hoàng Thị E', '89 Đường Nam Kỳ Khởi Nghĩa, Quận 3, TP.HCM', 10.78345000, 106.69678000, 'PICKUP_POINT', '07:05:00'),
+('LOC007', 'Điểm đón Vũ Văn F', '23 Đường Điện Biên Phủ, Quận Bình Thạnh, TP.HCM', 10.79234000, 106.70456000, 'PICKUP_POINT', '07:10:00'),
+('LOC008', 'Điểm đón Đặng Thị G', '67 Đường Xô Viết Nghệ Tĩnh, Quận Bình Thạnh, TP.HCM', 10.79567000, 106.70789000, 'PICKUP_POINT', '07:15:00'),
+('LOC009', 'Điểm đón Bùi Văn H', '34 Đường Nguyễn Đình Chiểu, Quận 3, TP.HCM', 10.78012000, 106.69234000, 'PICKUP_POINT', '07:20:00'),
+('LOC010', 'Bãi đỗ xe trường', '123 Đường Lê Lợi (Sân sau), Quận 1, TP.HCM', 10.77289000, 106.69782000, 'PARKING', '08:30:00');
+
+-- Thêm dữ liệu vào bảng DRIVER
+INSERT INTO `Driver` (`id`, `name`, `phone`, `licenseNumber`, `experience`, `status`, `currentBus_id`) VALUES
+('DRV001', 'Nguyễn Văn Tài', '0901234567', 'B2-123456', 10, 'OFF_DUTY', NULL),
+('DRV002', 'Trần Minh Tuấn', '0902345678', 'B2-234567', 8, 'OFF_DUTY', NULL),
+('DRV003', 'Lê Hoàng Nam', '0903456789', 'B2-345678', 12, 'OFF_DUTY', NULL);
+
+-- Thêm dữ liệu vào bảng ROUTE
+INSERT INTO `Route` (`id`, `name`, `estimatedDuration`, `distance`, `startTime`, `endTime`) VALUES
+('ROUTE001', 'Tuyến A - Buổi sáng', 60, 15.5, '06:45:00', '08:00:00'),
+('ROUTE002', 'Tuyến B - Buổi sáng', 55, 12.3, '06:50:00', '08:00:00'),
+('ROUTE003', 'Tuyến C - Buổi sáng', 50, 10.8, '07:00:00', '08:00:00');
+
+-- Thêm dữ liệu vào bảng BUS
+INSERT INTO `Bus` (`id`, `capacity`, `currentLocation_id`, `status`, `speed`, `lastUpdate`, `route_id`, `driver_id`) VALUES
+('BUS001', 35, 'LOC010', 'ACTIVE', 0.00, '2025-10-20 08:30:00', 'ROUTE001', 'DRV001'),
+('BUS002', 40, 'LOC010', 'ACTIVE', 0.00, '2025-10-20 08:30:00', 'ROUTE002', 'DRV002'),
+('BUS003', 30, 'LOC010', 'MAINTENANCE', 0.00, '2025-10-20 08:30:00', NULL, NULL);
+
+-- Cập nhật currentBus_id cho Driver
+UPDATE `Driver` SET `currentBus_id` = 'BUS001' WHERE `id` = 'DRV001';
+UPDATE `Driver` SET `currentBus_id` = 'BUS002' WHERE `id` = 'DRV002';
+
+-- Thêm dữ liệu vào bảng ROUTE_STOP
+INSERT INTO `Route_Stop` (`route_id`, `location_id`, `stop_order`) VALUES
+('ROUTE001', 'LOC002', 1),
+('ROUTE001', 'LOC003', 2),
+('ROUTE001', 'LOC004', 3),
+('ROUTE001', 'LOC001', 4),
+('ROUTE002', 'LOC005', 1),
+('ROUTE002', 'LOC006', 2),
+('ROUTE002', 'LOC007', 3),
+('ROUTE002', 'LOC001', 4),
+('ROUTE003', 'LOC008', 1),
+('ROUTE003', 'LOC009', 2),
+('ROUTE003', 'LOC001', 3);
+
+-- Thêm dữ liệu vào bảng PARENT
+INSERT INTO `parent` (`id`, `name`, `phone`, `address`, `user_id`) VALUES
+('PAR001', 'Nguyễn Văn A', '0911111111', '45 Đường Nguyễn Huệ, Quận 1, TP.HCM', 'USER005'),
+('PAR002', 'Trần Thị B', '0922222222', '78 Đường Lê Thánh Tôn, Quận 1, TP.HCM', 'USER006'),
+('PAR003', 'Lê Thị C', '0933333333', '12 Đường Pasteur, Quận 3, TP.HCM', 'USER007'),
+('PAR004', 'Phạm Văn D', '0944444444', '56 Đường Hai Bà Trưng, Quận 3, TP.HCM', 'USER008'),
+('PAR005', 'Hoàng Thị E', '0955555555', '89 Đường Nam Kỳ Khởi Nghĩa, Quận 3, TP.HCM', 'USER009');
+
+-- Thêm dữ liệu vào bảng STUDENT
+INSERT INTO `Student` (`id`, `name`, `class`, `grade`, `parentContact`, `status`, `assignedBus_id`, `pickupLocation_id`, `dropoffLocation_id`, `parent_id`) VALUES
+('STU001', 'Nguyễn Minh An', '1A', 1, '0911111111', 'AT_HOME', 'BUS001', 'LOC002', 'LOC001', 'PAR001'),
+('STU002', 'Nguyễn Thùy Dung', '3B', 3, '0911111111', 'AT_HOME', 'BUS001', 'LOC002', 'LOC001', 'PAR001'),
+('STU003', 'Trần Hoàng Long', '2A', 2, '0922222222', 'AT_HOME', 'BUS001', 'LOC003', 'LOC001', 'PAR002'),
+('STU004', 'Lê Thị Mai', '4C', 4, '0933333333', 'AT_HOME', 'BUS001', 'LOC004', 'LOC001', 'PAR003'),
+('STU005', 'Phạm Quang Huy', '1B', 1, '0944444444', 'AT_HOME', 'BUS002', 'LOC005', 'LOC001', 'PAR004'),
+('STU006', 'Phạm Thu Hà', '2C', 2, '0944444444', 'AT_HOME', 'BUS002', 'LOC005', 'LOC001', 'PAR004'),
+('STU007', 'Hoàng Minh Tuấn', '3A', 3, '0955555555', 'AT_HOME', 'BUS002', 'LOC006', 'LOC001', 'PAR005'),
+('STU008', 'Vũ Thị Lan', '5A', 5, '0966666666', 'AT_HOME', 'BUS002', 'LOC007', 'LOC001', NULL),
+('STU009', 'Đặng Văn Phong', '4B', 4, '0977777777', 'AT_HOME', NULL, 'LOC008', 'LOC001', NULL),
+('STU010', 'Bùi Thị Hồng', '1C', 1, '0988888888', 'AT_HOME', NULL, 'LOC009', 'LOC001', NULL);
+
+-- Thêm dữ liệu vào bảng SCHEDULE
+INSERT INTO `Schedule` (`id`, `date`, `time`, `status`, `bus_id`, `driver_id`, `route_id`) VALUES
+('SCH001', '2025-10-20', '06:45:00', 'COMPLETED', 'BUS001', 'DRV001', 'ROUTE001'),
+('SCH002', '2025-10-20', '06:50:00', 'COMPLETED', 'BUS002', 'DRV002', 'ROUTE002'),
+('SCH003', '2025-10-21', '06:45:00', 'PLANNED', 'BUS001', 'DRV001', 'ROUTE001'),
+('SCH004', '2025-10-21', '06:50:00', 'PLANNED', 'BUS002', 'DRV002', 'ROUTE002'),
+('SCH005', '2025-10-22', '06:45:00', 'PLANNED', 'BUS001', 'DRV001', 'ROUTE001'),
+('SCH006', '2025-10-22', '06:50:00', 'PLANNED', 'BUS002', 'DRV002', 'ROUTE002');
+
+-- Thêm dữ liệu vào bảng SCHEDULE_STUDENT
+INSERT INTO `Schedule_Student` (`schedule_id`, `student_id`, `pickup_status`) VALUES
+('SCH001', 'STU001', 'PICKED_UP'),
+('SCH001', 'STU002', 'PICKED_UP'),
+('SCH001', 'STU003', 'PICKED_UP'),
+('SCH001', 'STU004', 'PICKED_UP'),
+('SCH002', 'STU005', 'PICKED_UP'),
+('SCH002', 'STU006', 'PICKED_UP'),
+('SCH002', 'STU007', 'PICKED_UP'),
+('SCH002', 'STU008', 'MISSED'),
+('SCH003', 'STU001', 'PENDING'),
+('SCH003', 'STU002', 'PENDING'),
+('SCH003', 'STU003', 'PENDING'),
+('SCH003', 'STU004', 'PENDING'),
+('SCH004', 'STU005', 'PENDING'),
+('SCH004', 'STU006', 'PENDING'),
+('SCH004', 'STU007', 'PENDING'),
+('SCH004', 'STU008', 'PENDING');
+
+-- Thêm dữ liệu vào bảng MESSAGE
+INSERT INTO `Message` (`sender_type`, `sender_id`, `recipient_id`, `message_content`, `timestamp`, `is_read`) VALUES
+('DRIVER', 'DRV001', 'PAR001', 'Xe sẽ đến điểm đón trong 5 phút.', '2025-10-20 06:40:00', TRUE),
+('PARENT', 'PAR001', 'DRV001', 'Con em hôm nay nghỉ ốm, không đi xe buýt.', '2025-10-20 06:30:00', TRUE),
+('SYSTEM', 'SYSTEM', 'PAR002', 'Xe buýt BUS001 đã đến điểm đón của con bạn.', '2025-10-20 06:45:00', TRUE),
+('DRIVER', 'DRV002', 'PAR004', 'Con bạn đã lên xe an toàn.', '2025-10-20 06:50:00', FALSE),
+('SYSTEM', 'SYSTEM', 'PAR005', 'Xe buýt BUS002 sẽ đến trong 10 phút.', '2025-10-20 06:55:00', FALSE);
+
+-- Thêm dữ liệu vào bảng LOCATIONLOG
+INSERT INTO `LocationLog` (`bus_id`, `timestamp`, `latitude`, `longitude`, `speed`) VALUES
+('BUS001', '2025-10-20 06:45:00', 10.77463000, 106.70127000, 25.50),
+('BUS001', '2025-10-20 06:50:00', 10.77589000, 106.70234000, 28.30),
+('BUS001', '2025-10-20 06:55:00', 10.77832000, 106.69345000, 30.00),
+('BUS001', '2025-10-20 07:00:00', 10.78124000, 106.69521000, 27.80),
+('BUS001', '2025-10-20 07:30:00', 10.77297000, 106.69790000, 0.00),
+('BUS002', '2025-10-20 06:50:00', 10.78124000, 106.69521000, 26.50),
+('BUS002', '2025-10-20 06:55:00', 10.78345000, 106.69678000, 29.00),
+('BUS002', '2025-10-20 07:00:00', 10.79234000, 106.70456000, 31.20),
+('BUS002', '2025-10-20 07:05:00', 10.79567000, 106.70789000, 28.50),
+('BUS002', '2025-10-20 07:35:00', 10.77297000, 106.69790000, 0.00);
