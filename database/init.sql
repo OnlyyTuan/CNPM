@@ -130,7 +130,7 @@ CREATE TABLE `Message` (
     `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `is_read` BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (`id`)
-);
+) ENGINE=InnoDB;
 
 -- 12. BẢNG LocationLog
 CREATE TABLE `LocationLog` (
@@ -195,13 +195,13 @@ ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `Message`
 ADD CONSTRAINT `FK_Message_Recipient`
-FOREIGN KEY (`recipient_id`) REFERENCES `user`(`id`)
-ON DELETE CASCADE ON UPDATE CASCADE;
+  FOREIGN KEY (`recipient_id`) REFERENCES `user`(`id`)
+  ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `Message`
 ADD CONSTRAINT `FK_Message_Sender`
-FOREIGN KEY (`sender_id`) REFERENCES `user`(`id`)
-ON DELETE SET NULL ON UPDATE CASCADE;
+  FOREIGN KEY (`sender_id`) REFERENCES `user`(`id`)
+  ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- ===================================
 -- DỮ LIỆU MẪU (SAMPLE DATA)
@@ -209,15 +209,16 @@ ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- USER (Tài khoản)
 INSERT INTO `user` (`id`, `username`, `password`, `email`, `role`) VALUES
-('U001', 'admin1', '123456', 'admin@school.com', 'ADMIN'),
-('U002', 'driver1', '123456', 'driver1@school.com', 'DRIVER'),
-('U003', 'driver2', '123456', 'driver2@school.com', 'DRIVER'),
-('U004', 'driver3', '123456', 'driver3@school.com', 'DRIVER'),
-('U005', 'parent1', '123456', 'parent1@gmail.com', 'PARENT'),
-('U006', 'parent2', '123456', 'parent2@gmail.com', 'PARENT'),
-('U007', 'parent3', '123456', 'parent3@gmail.com', 'PARENT'),
-('U008', 'parent4', '123456', 'parent4@gmail.com', 'PARENT'),
-('U009', 'parent5', '123456', 'parent5@gmail.com', 'PARENT');
+('U001', 'admin1', '123456', 'admin@school.com', 'admin'),
+('U002', 'driver1', '123456', 'driver1@school.com', 'driver'),
+('U003', 'driver2', '123456', 'driver2@school.com', 'driver'),
+('U004', 'driver3', '123456', 'driver3@school.com', 'driver'),
+('U005', 'parent1', '123456', 'parent1@gmail.com', 'parent'),
+('U006', 'parent2', '123456', 'parent2@gmail.com', 'parent'),
+('U007', 'parent3', '123456', 'parent3@gmail.com', 'parent'),
+('U008', 'parent4', '123456', 'parent4@gmail.com', 'parent'),
+('U009', 'parent5', '123456', 'parent5@gmail.com', 'parent'),
+('SYSTEM', 'system', 'nopass', 'system@school.com', 'admin');
 
 -- LOCATION (Vị trí trường, bãi xe, điểm đón)
 INSERT INTO `location` (`id`, `name`, `address`, `latitude`, `longitude`, `type`) VALUES
@@ -295,11 +296,12 @@ INSERT INTO `schedule_student` (`schedule_id`, `student_id`, `pickup_status`) VA
 
 -- MESSAGE (Tin nhắn)
 INSERT INTO `message` (`sender_type`, `sender_id`, `recipient_id`, `message_content`, `timestamp`, `is_read`) VALUES
-('DRIVER', 'D001', 'P001', 'Xe sẽ đến điểm đón trong 5 phút.', '2025-10-20 06:40:00', TRUE),
-('PARENT', 'P001', 'D001', 'Con em hôm nay nghỉ học.', '2025-10-20 06:30:00', TRUE),
-('SYSTEM', 'SYSTEM', 'P002', 'Xe buýt BUS001 đã đến điểm đón.', '2025-10-20 06:45:00', TRUE),
-('DRIVER', 'D002', 'P004', 'Con bạn đã lên xe an toàn.', '2025-10-20 06:50:00', FALSE),
-('SYSTEM', 'SYSTEM', 'P005', 'Xe buýt BUS002 sẽ đến trong 10 phút.', '2025-10-20 06:55:00', FALSE);
+('DRIVER', 'U002', 'U005', 'Xe sẽ đến điểm đón trong 5 phút.', '2025-10-20 06:40:00', TRUE),
+('PARENT', 'U005', 'U002', 'Con em hôm nay nghỉ học.', '2025-10-20 06:30:00', TRUE),
+('SYSTEM', 'SYSTEM', 'U006', 'Xe buýt BUS001 đã đến điểm đón.', '2025-10-20 06:45:00', TRUE),
+('DRIVER', 'U003', 'U008', 'Con bạn đã lên xe an toàn.', '2025-10-20 06:50:00', FALSE),
+('SYSTEM', 'SYSTEM', 'U009', 'Xe buýt BUS002 sẽ đến trong 10 phút.', '2025-10-20 06:55:00', FALSE);
+
 
 -- LOCATION LOG (Lịch sử vị trí xe)
 INSERT INTO `locationlog` (`bus_id`, `timestamp`, `latitude`, `longitude`, `speed`) VALUES
