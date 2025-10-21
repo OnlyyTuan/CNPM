@@ -1,27 +1,43 @@
-// backend/src/services/driverService.js
-
 const { sequelize, Driver, Bus } = require("../db");
-// const userService = require('./userService'); // Giữ lại nếu cần User
 
 const driverService = {
   // 1. Lấy danh sách Tài xế kèm thông tin Xe buýt (Dùng cho GET /api/v1/drivers)
   async getAllDriversWithBus() {
     return Driver.findAll({
+      // Chỉ định rõ các thuộc tính (cột) dạng camelCase muốn lấy
+      // Điều này giúp loại bỏ các cột snake_case dư thừa (user_id, current_bus_id)
+      attributes: [
+        "id",
+        "fullName",
+        "phone",
+        "licenseNumber",
+        "status",
+        "currentBusId", // Khóa ngoại dạng camelCase
+        "userId", // Khóa ngoại dạng camelCase
+      ],
       include: [
         {
           model: Bus,
           as: "CurrentBus", // BÍ DANH ĐÃ ĐÚNG
-          attributes: ["id", "license_plate", "capacity", "status"], // Chọn các cột cần thiết
+          attributes: ["id", "license_plate", "capacity", "status"], // Chọn các cột cần thiết từ Bus
           required: false,
         },
       ],
-      order: [["full_name", "ASC"]], // Sắp xếp theo tên
+      order: [["full_name", "ASC"]], // Sắp xếp theo tên (Dùng tên cột SQL: full_name)
     });
-  },
+  }, // 2. Lấy chi tiết tài xế theo ID
 
-  // THÊM: Lấy chi tiết tài xế theo ID
   async getDriverById(id) {
     return Driver.findByPk(id, {
+      attributes: [
+        "id",
+        "fullName",
+        "phone",
+        "licenseNumber",
+        "status",
+        "currentBusId",
+        "userId",
+      ],
       include: [
         {
           model: Bus,
@@ -31,15 +47,12 @@ const driverService = {
         },
       ],
     });
-  },
+  }, // 3. Tạo tài xế mới (CRUD cơ bản) // Lưu ý: Dữ liệu đầu vào phải là dạng camelCase (ví dụ: fullName)
 
-  // THÊM: Tạo tài xế mới (CRUD cơ bản)
-  // Lưu ý: Tên cột phải khớp với Model: full_name, licenseNumber
   async createDriver(data) {
     return Driver.create(data);
-  },
+  }, // 4. Cập nhật thông tin tài xế (CRUD cơ bản)
 
-  // THÊM: Cập nhật thông tin tài xế (CRUD cơ bản)
   async updateDriver(id, data) {
     const [updated] = await Driver.update(data, {
       where: { id: id },
@@ -48,20 +61,17 @@ const driverService = {
       return this.getDriverById(id);
     }
     return null;
-  },
+  }, // 5. Xóa tài xế (CRUD cơ bản)
 
-  // THÊM: Xóa tài xế (CRUD cơ bản)
   async deleteDriver(id) {
     return Driver.destroy({
       where: { id: id },
     });
-  },
+  }, // 6. Logic gán/hủy gán Xe buýt và Tài xế (Transaction)
 
-  // Logic gán/hủy gán Xe buýt và Tài xế (Đã được bạn cung cấp, rất tốt!)
   async assignBusToDriver(driverId, busId) {
     const t = await sequelize.transaction();
     try {
-      // ... (Phần logic Transaction của bạn) ...
       const driver = await Driver.findByPk(driverId, { transaction: t });
       const bus = busId ? await Bus.findByPk(busId, { transaction: t }) : null;
 
@@ -70,37 +80,35 @@ const driverService = {
       }
       if (busId && !bus) {
         throw new Error("Bus not found.");
-      }
+      } // Do trong Model Driver bạn đang dùng currentBusId (camelCase) và underscored: true, // Sequelize tự động ánh xạ nó thành current_bus_id trong DB. // Tuy nhiên, khi truy cập instance trong code JS, nó vẫn dùng currentBusId (hoặc current_bus_id nếu không được ánh xạ). // Sử dụng `driver.get('currentBusId')` hoặc dựa vào tên thuộc tính đã được ánh xạ (currentBusId)
 
-      // 2. Hủy gán xe cũ của tài xế (nếu có)
-      if (driver.currentBus_id && driver.currentBus_id !== busId) {
+      const currentBusOfDriver = driver.currentBusId || driver.current_bus_id; // 2. Hủy gán xe cũ của tài xế (nếu có)
+
+      if (currentBusOfDriver && currentBusOfDriver !== busId) {
         await Bus.update(
           { driver_id: null },
-          { where: { id: driver.currentBus_id }, transaction: t }
+          { where: { id: currentBusOfDriver }, transaction: t }
         );
-      }
+      } // 3. Hủy gán tài xế cũ của xe buýt mục tiêu
 
-      // 3. Hủy gán tài xế cũ của xe buýt mục tiêu
       if (bus && bus.driver_id && bus.driver_id !== driverId) {
         await Driver.update(
-          { currentBus_id: null, status: "OFF_DUTY" },
+          { currentBusId: null, status: "OFF_DUTY" }, // Cập nhật bằng tên thuộc tính JS
           { where: { id: bus.driver_id }, transaction: t }
         );
-      }
+      } // 4. Gán Tài xế mới vào Xe buýt (hoặc hủy gán nếu busId là null)
 
-      // 4. Gán Tài xế mới vào Xe buýt (hoặc hủy gán nếu busId là null)
       await Driver.update(
         {
-          currentBus_id: busId,
+          currentBusId: busId, // Cập nhật bằng tên thuộc tính JS
           status: busId ? "DRIVING" : "OFF_DUTY",
         },
         { where: { id: driverId }, transaction: t }
-      );
+      ); // 5. Gán Xe buýt cho Tài xế mới
 
-      // 5. Gán Xe buýt cho Tài xế mới
       if (bus) {
         await Bus.update(
-          { driver_id: driverId },
+          { driver_id: driverId }, // Cập nhật bằng tên cột SQL
           { where: { id: busId }, transaction: t }
         );
       }

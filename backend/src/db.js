@@ -84,6 +84,14 @@ db.Student.belongsTo(db.Bus, {
   as: "AssignedBus",
   //onDelete: "SET NULL",
 });
+
+// Parent (1-N) Student
+db.Parent.hasMany(db.Student, {
+  foreignKey: "parent_id", // Khóa ngoại trong bảng student
+  as: "Students", // Tên mảng mà parentService.js đang INCLUDE
+  onDelete: "CASCADE",
+});
+
 // Student (N-1) Parent
 db.Student.belongsTo(db.Parent, {
   foreignKey: "parent_id",
