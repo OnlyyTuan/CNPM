@@ -6,10 +6,24 @@ const helmet = require("helmet"); // Thêm bảo mật cơ bản
 const app = express();
 
 // Import Routes đã tạo
+const authRoutes = require("./routes/authRoutes");
 const driverRoutes = require("./routes/driverRoutes");
 const busRoutes = require("./routes/busRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const parentRoutes = require("./routes/parentRoutes");
+const scheduleRoutes = require("./routes/scheduleRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
+const assignmentRoutes = require("./routes/assignmentRoutes");
+
+// Root cho API v1 — trả về JSON đơn giản
+app.get("/api/v1/", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "Server Smart School Bus đang chạy!",
+    info: "Sử dụng các endpoint API với prefix /api/v1/...",
+  });
+});
+
 // MIDDLEWARE
 app.use(helmet());
 app.use(cors());
@@ -18,11 +32,17 @@ app.use(express.urlencoded({ extended: true }));
 
 // ĐỊNH NGHĨA CÁC API ENDPOINT (Sử dụng /api/v1 prefix)
 
+// Authentication routes
+app.use("/api/v1/auth", authRoutes);
+
 // Gán prefix /api/v1/drivers cho các route quản lý tài xế
 app.use("/api/v1/drivers", driverRoutes);
 app.use("/api/v1/buses", busRoutes);
 app.use("/api/v1/students", studentRoutes);
 app.use("/api/v1/parents", parentRoutes);
+app.use("/api/v1/schedules", scheduleRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/assignments", assignmentRoutes);
 
 // Health Check Route
 app.get("/api/v1/health", (req, res) => {

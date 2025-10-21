@@ -1,7 +1,35 @@
-// backend/src/db.js
-
 const { Sequelize } = require("sequelize");
-const dbConfig = require("./config/db.config"); // Lấy cấu hình DB
+// Lấy cấu hình DB: ưu tiên process.env, nếu có file config thì merge (env override)
+let dbConfig;
+try {
+  const cfg = require("./config/db.config");
+  dbConfig = {
+    HOST: process.env.DB_HOST || cfg.HOST || "127.0.0.1",
+    USER: process.env.DB_USER || cfg.USER || "root",
+    PASSWORD: process.env.DB_PASSWORD || cfg.PASSWORD || "",
+    DB: process.env.DB_NAME || cfg.DB || "smartschoolbus",
+    DIALECT: cfg.DIALECT || "mysql",
+    PORT: process.env.DB_PORT ? Number(process.env.DB_PORT) : cfg.PORT || 3306,
+    pool: cfg.pool || { max: 5, min: 0, acquire: 30000, idle: 10000 },
+  };
+} catch (err) {
+  // Nếu không có file config, dựng từ env hoặc mặc định
+  dbConfig = {
+    HOST: process.env.DB_HOST || "127.0.0.1",
+    USER: process.env.DB_USER || "root",
+    PASSWORD: process.env.DB_PASSWORD || "",
+    DB: process.env.DB_NAME || "smartschoolbus",
+    DIALECT: "mysql",
+    PORT: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+    pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
+  };
+}
+// ...existing code...
+
+// Hiện thông tin kết nối (không in password)
+console.log(
+  `DB: connecting -> user=${dbConfig.USER} host=${dbConfig.HOST} port=${dbConfig.PORT} database=${dbConfig.DB}`
+);
 
 // 1. Khởi tạo Sequelize Instance
 const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {

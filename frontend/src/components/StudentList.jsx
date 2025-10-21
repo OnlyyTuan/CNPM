@@ -7,7 +7,7 @@ function StudentList() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/students")
+      .get("http://localhost:5000/api/v1/students")
       .then((res) => setStudents(res.data))
       .catch((err) => console.error(err));
   }, []);

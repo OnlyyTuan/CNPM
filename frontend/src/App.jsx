@@ -1,22 +1,69 @@
-import LocationList from "./components/LocationList";
-import BusList from "./components/BusList";
-import DriverList from "./components/DriverList";
-import StudentList from "./components/StudentList";
-import RouteList from "./components/RouteList";
-import ScheduleList from "./components/ScheduleList";
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import AdminLayout from './components/Layout/AdminLayout';
+import LoginPage from './pages/Auth/LoginPage';
+import ProtectedRoute from './components/Auth/ProtectedRoute';
+import Dashboard from './pages/Dashboard/Dashboard';
+import SchedulePage from './pages/Schedules/SchedulePage';
+import AssignmentPage from './pages/Assignments/AssignmentPage';
+import StudentsPage from './pages/Students/StudentsPage';
+import DriversPage from './pages/Drivers/DriversPage';
+import BusesPage from './pages/Buses/BusesPage';
+import RoutesPage from './pages/Routes/RoutesPage';
 
 function App() {
   return (
-    <div>
-      <h1>Smart School Bus</h1>
-      <LocationList />
-      <BusList />
-      <DriverList />
-      <StudentList />
-      <RouteList />
-      <ScheduleList />
-    </div>
+    <Router>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+      
+      <Routes>
+        {/* Redirect root to login */}
+        <Route path="/" element={<Navigate to="/login/admin" replace />} />
+        
+        {/* Login Route - Public */}
+        <Route path="/login/admin" element={<LoginPage />} />
+        
+        {/* Admin Routes - Protected */}
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="students" element={<StudentsPage />} />
+          <Route path="drivers" element={<DriversPage />} />
+          <Route path="buses" element={<BusesPage />} />
+          <Route path="routes" element={<RoutesPage />} />
+          <Route path="schedules" element={<SchedulePage />} />
+          <Route path="assignments" element={<AssignmentPage />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 
 export default App;
+

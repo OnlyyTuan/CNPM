@@ -7,7 +7,7 @@ function BusList() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/buses")
+      .get("http://localhost:5000/api/v1/buses")
       .then((res) => setBuses(res.data))
       .catch((err) => console.error(err));
   }, []);

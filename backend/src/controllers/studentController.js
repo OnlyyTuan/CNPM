@@ -1,79 +1,132 @@
 // backend/src/controllers/studentController.js
-const { Student, Bus, Location, Parent } = require('../db'); // Import các Models liên quan
+const db = require('../database'); // Import database connection
 
 const studentController = {
     // [GET] /api/v1/students - Lấy danh sách học sinh
     async findAll(req, res) {
         try {
-            const students = await Student.findAll({
-                // JOIN để lấy thông tin Xe được gán, Điểm đón/trả và Phụ huynh
-                include: [
-                    { model: Bus, as: 'AssignedBus', attributes: ['id', 'capacity'] }, // assignedBus_id FK to Bus.id
-                    { model: Location, as: 'PickupLocation', attributes: ['id', 'name', 'address'] }, // pickupLocation_id FK to Location.id
-                    { model: Location, as: 'DropoffLocation', attributes: ['id', 'name', 'address'] }, // dropoffLocation_id FK to Location.id
-                    { model: Parent, as: 'Parent', attributes: ['id', 'name', 'phone'] } // parent_id FK to parent.id
-                ],
-                order: [['name', 'ASC']]
+            const [students] = await db.query(`
+                SELECT 
+                    s.*,
+                    b.id as bus_id,
+                    b.license_plate as bus_license_plate,
+                    b.capacity as bus_capacity,
+                    pl.id as pickup_location_id,
+                    pl.name as pickup_location_name,
+                    pl.address as pickup_location_address,
+                    dl.id as dropoff_location_id,
+                    dl.name as dropoff_location_name,
+                    dl.address as dropoff_location_address,
+                    p.id as parent_id,
+                    p.full_name as parent_name,
+                    p.phone as parent_phone
+                FROM student s
+                LEFT JOIN bus b ON s.assigned_bus_id = b.id
+                LEFT JOIN location pl ON s.pickup_location_id = pl.id
+                LEFT JOIN location dl ON s.dropoff_location_id = dl.id
+                LEFT JOIN parent p ON s.parent_id = p.id
+                ORDER BY s.full_name ASC
+            `);
+            
+            res.json({
+                success: true,
+                data: students
             });
-            res.send(students);
         } catch (error) {
-            res.status(500).send({ message: "Lỗi khi lấy danh sách học sinh.", error: error.message });
+            console.error('Lỗi khi lấy danh sách học sinh:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Lỗi khi lấy danh sách học sinh.", 
+                error: error.message 
+            });
         }
     },
 
     // [POST] /api/v1/students - Thêm học sinh mới
     async create(req, res) {
-        const studentData = req.body;
         try {
-            // Logic quan trọng: Kiểm tra sự tồn tại của các Khóa ngoại (Bus, Location, Parent)
-            // Sequelize sẽ tự động kiểm tra nếu các ID này được truyền vào và không Null.
-            const newStudent = await Student.create(studentData);
-            res.status(201).send(newStudent);
+            const { id, full_name, class: studentClass, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id } = req.body;
+            
+            await db.query(`
+                INSERT INTO student (id, full_name, class, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [id, full_name, studentClass, grade, parent_contact, status || 'WAITING', parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id]);
+            
+            res.status(201).json({
+                success: true,
+                message: 'Tạo học sinh mới thành công'
+            });
         } catch (error) {
-            // Lỗi có thể là: ID đã tồn tại, hoặc Khóa ngoại không hợp lệ (Bus ID, Location ID, Parent ID không có thật)
-            res.status(400).send({ message: "Lỗi khi tạo học sinh mới. Kiểm tra các ID liên kết.", error: error.message });
+            console.error('Lỗi khi tạo học sinh:', error);
+            res.status(400).json({ 
+                success: false,
+                message: "Lỗi khi tạo học sinh mới.", 
+                error: error.message 
+            });
         }
     },
 
     // [PUT] /api/v1/students/:id - Cập nhật thông tin học sinh
     async update(req, res) {
-        const { id } = req.params;
-        const updateData = req.body;
         try {
-            const [updated] = await Student.update(updateData, {
-                where: { id: id }
-            });
-
-            if (updated) {
-                const updatedStudent = await Student.findByPk(id);
-                res.send(updatedStudent);
+            const { id } = req.params;
+            const { full_name, class: studentClass, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id } = req.body;
+            
+            const [result] = await db.query(`
+                UPDATE student 
+                SET full_name = ?, class = ?, grade = ?, parent_contact = ?, status = ?, 
+                    parent_id = ?, assigned_bus_id = ?, pickup_location_id = ?, dropoff_location_id = ?
+                WHERE id = ?
+            `, [full_name, studentClass, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id, id]);
+            
+            if (result.affectedRows > 0) {
+                res.json({
+                    success: true,
+                    message: 'Cập nhật học sinh thành công'
+                });
             } else {
-                res.status(404).send({ message: "Không tìm thấy học sinh." });
+                res.status(404).json({ 
+                    success: false,
+                    message: "Không tìm thấy học sinh." 
+                });
             }
         } catch (error) {
-            res.status(500).send({ message: "Lỗi khi cập nhật học sinh.", error: error.message });
+            console.error('Lỗi khi cập nhật học sinh:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Lỗi khi cập nhật học sinh.", 
+                error: error.message 
+            });
         }
     },
 
     // [DELETE] /api/v1/students/:id - Xóa học sinh
     async delete(req, res) {
-        const { id } = req.params;
         try {
-            const result = await Student.destroy({
-                where: { id: id }
-            });
-
-            if (result) {
-                // Sequelize sẽ xử lý: Các bản ghi trong Schedule_Student sẽ CASCADE DELETE
-                res.status(200).send({ message: "Xóa học sinh thành công." });
+            const { id } = req.params;
+            
+            const [result] = await db.query('DELETE FROM student WHERE id = ?', [id]);
+            
+            if (result.affectedRows > 0) {
+                res.json({
+                    success: true,
+                    message: "Xóa học sinh thành công."
+                });
             } else {
-                res.status(404).send({ message: "Không tìm thấy học sinh." });
+                res.status(404).json({ 
+                    success: false,
+                    message: "Không tìm thấy học sinh." 
+                });
             }
         } catch (error) {
-            res.status(500).send({ message: "Lỗi khi xóa học sinh.", error: error.message });
+            console.error('Lỗi khi xóa học sinh:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Lỗi khi xóa học sinh.", 
+                error: error.message 
+            });
         }
-    },
-    // ... Thêm hàm findOne (Chi tiết) ...
+    }
 };
 
 module.exports = studentController;

@@ -6,7 +6,7 @@ function RouteList() {
   const [routes, setRoutes] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:3000/routes')
+    axios.get('http://localhost:5000/api/v1/routes')
       .then(res => setRoutes(res.data))
       .catch(err => console.error(err));
   }, []);

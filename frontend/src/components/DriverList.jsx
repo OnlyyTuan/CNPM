@@ -7,7 +7,7 @@ function DriverList() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/drivers")
+      .get("http://localhost:5000/api/v1/drivers")
       .then((res) => setDrivers(res.data))
       .catch((err) => console.error(err));
   }, []);
