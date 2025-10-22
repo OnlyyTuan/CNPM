@@ -142,17 +142,15 @@ db.Student.belongsTo(db.Location, {
 // 4. HÀM KẾT NỐI VÀ ĐỒNG BỘ DB
 // ===================================
 db.connectDB = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log("✅ Kết nối Database thành công!");
-
-    // Đồng bộ hóa các Models với DB (Tạo/Update bảng nếu cần)
-    await sequelize.sync({ force: false });
-    console.log("✅ Đồng bộ hóa Models/Tables thành công.");
-  } catch (error) {
-    console.error("❌ LỖI Kết nối Database:", error);
-    throw error;
-  }
+    try {
+        await sequelize.authenticate();
+        console.log("✅ Kết nối Database thành công!");
+        await sequelize.sync({ alter: true }); // Điều chỉnh schema hiện tại
+        console.log("✅ Đồng bộ hóa Models/Tables thành công.");
+    } catch (error) {
+        console.error("❌ LỖI Kết nối Database:", error);
+        throw error;
+    }
 };
 
 module.exports = db;

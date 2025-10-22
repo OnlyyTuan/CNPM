@@ -1,4 +1,3 @@
-// backend/src/models/User.js
 module.exports = (sequelize, DataTypes) => {
     const User = sequelize.define("User", {
         id: {
@@ -24,12 +23,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(50), // ADMIN, DRIVER, PARENT
             allowNull: false,
         },
-        // Sequelize sẽ tự động thêm createdAt và updatedAt
     }, {
-        tableName: 'user', // Tên bảng trong DB (quan trọng)
+        tableName: 'user',
         timestamps: true,
-        // Model không có trường updated_at nếu bạn dùng updated_at TIMESTAMP
-        // Tuy nhiên, Sequelize mặc định dùng camelCase (updatedAt)
+        createdAt: 'created_at', // Khớp với tên cột trong database
+        updatedAt: 'updated_at', // Khớp với tên cột trong database
     });
     return User;
 };
