@@ -8,33 +8,48 @@
 
 ---
 
-## ⚡ Cài đặt project
+## 🚀 Cài đặt và Chạy
 
-Mở Terminal hoặc Git Bash và chạy các lệnh sau:
-
+### Backend
 ```bash
-# Clone source code về máy
-git clone https://github.com/OnlyyTuan/CNPM.git
-cd CNPM
-
-# Cài đặt backend
 cd backend
 npm install
-
-# Cài đặt frontend
-cd ../frontend
-npm install
+npm run dev
 ```
-## 🗄️ Cấu hình cơ sở dữ liệu
 
-### 1️⃣ Tạo database
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-```sql
-mysql -u root -p <database/init.sql
+### Database
+```bash
+# Import database từ file init.sql
+mysql -u root -p < database/init.sql
 
-mysql -u root -p
+## 🛠️ Công nghệ sử dụng
 
-CREATE DATABASE smartschoolbus;
-exit
+### Frontend
+- ⚛️ React 19
+- 🎨 Tailwind CSS
+- 📊 Recharts (Biểu đồ)
+- 📅 React Big Calendar
+- 🔔 React Hot Toast (Thông báo)
+- 🎯 Lucide React (Icons)
+- 🌐 Axios
+- 🛣️ React Router DOM
 
+### Backend
+- 🟢 Node.js
+- ⚡ Express
+- 🗄️ MySQL2
+- 🔐 bcryptjs
+- 🛡️ Helmet
+- 🌐 CORS
+
+
+
+ database/init.sql
 ```
