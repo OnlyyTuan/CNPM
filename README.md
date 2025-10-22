@@ -27,7 +27,7 @@ npm run dev
 ### Database
 ```bash
 # Import database từ file init.sql
-mysql -u root -p <
+mysql -u root -p < database/init.sql
 
 ## 🛠️ Công nghệ sử dụng
 
