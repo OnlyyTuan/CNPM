@@ -2,23 +2,26 @@
 module.exports = (sequelize, DataTypes) => {
     const Route = sequelize.define('Route', {
         id: {
-            type: DataTypes.STRING,
+            type: DataTypes.STRING(255),
             primaryKey: true,
             allowNull: false,
         },
-        route_name: {
+        routeName: {
             type: DataTypes.STRING(100),
+            field: 'route_name',
             allowNull: false,
         },
         estimatedDuration: {
-            type: DataTypes.STRING,
+            type: DataTypes.INTEGER,
+            field: 'estimated_duration',
         },
         distance: {
             type: DataTypes.DECIMAL(10, 2),
         },
-    }, { 
-        tableName: 'route', 
-        timestamps: false, 
+    }, {
+        tableName: 'route',
+        timestamps: false,
+        underscored: true,
     });
     return Route;
 };

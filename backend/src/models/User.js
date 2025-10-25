@@ -27,9 +27,7 @@ module.exports = (sequelize, DataTypes) => {
         // Sequelize sẽ tự động thêm createdAt và updatedAt
     }, {
         tableName: 'user', // Tên bảng trong DB (quan trọng)
-        timestamps: true,
-        // Model không có trường updated_at nếu bạn dùng updated_at TIMESTAMP
-        // Tuy nhiên, Sequelize mặc định dùng camelCase (updatedAt)
+        timestamps: false
     });
     return User;
 };

@@ -20,8 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         field: "license_number", // GIỮ LẠI
       },
       status: { type: DataTypes.STRING(50) },
-      currentBusId: {
-        // Khóa ngoại, dùng camelCase
+      current_bus_id: {
         type: DataTypes.STRING(255),
       },
       userId: {

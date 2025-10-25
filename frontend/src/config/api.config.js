@@ -12,4 +12,5 @@ export const API_ENDPOINTS = {
   ASSIGNMENTS: `${API_BASE_URL}/assignments`,
   ROUTES: `${API_BASE_URL}/routes`,
   PARENTS: `${API_BASE_URL}/parents`,
+  FEATURE_FLAGS: `${API_BASE_URL}/feature-flags`,
 };

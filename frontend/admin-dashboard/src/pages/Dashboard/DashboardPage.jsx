@@ -39,7 +39,7 @@ const DashboardPage = () => {
 
         fetchSummaryData();
         
-        // Polling (Tự động cập nhật vị trí sau mỗi 10 giây)
+        // Polling (Tự động cập nhật vị trí <= 3 giây để đạt yêu cầu)
         const intervalId = setInterval(async () => {
             try {
                 const locationRes = await apiServices.getLiveBusLocations();
@@ -47,7 +47,7 @@ const DashboardPage = () => {
             } catch (e) {
                 console.error("Live location update failed:", e);
             }
-        }, 10000); // Cập nhật mỗi 10 giây
+        }, 3000); // Cập nhật mỗi 3 giây
 
         return () => clearInterval(intervalId); // Cleanup khi component unmount
     }, []);

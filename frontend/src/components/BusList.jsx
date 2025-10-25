@@ -1,15 +1,28 @@
 // frontend/src/components/BusList.jsx
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axiosClient from "../api/axiosClient";
 
 function BusList() {
   const [buses, setBuses] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/v1/buses")
-      .then((res) => setBuses(res.data))
-      .catch((err) => console.error(err));
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Không có token xác thực");
+      return;
+    }
+
+    axiosClient
+      .get("/buses")
+      .then((res) => {
+        console.log("Bus data:", res.data);
+        setBuses(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching buses:", err);
+        setError(err.message);
+      });
   }, []);
 
   return (

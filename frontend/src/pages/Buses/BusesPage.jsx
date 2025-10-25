@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, Bus as BusIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
-import axios from 'axios';
+import { getAllBuses, deleteBus } from '../../api/busApi';
 
 const BusesPage = () => {
   const [buses, setBuses] = useState([]);
@@ -39,14 +39,13 @@ const BusesPage = () => {
   const fetchBuses = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/v1/buses');
-      if (response.data.success) {
-        setBuses(response.data.data);
-        setFilteredBuses(response.data.data);
-      }
+      const data = await getAllBuses();
+      console.log('Bus data:', data);
+      setBuses(data);
+      setFilteredBuses(data);
     } catch (error) {
       console.error('Lỗi khi tải danh sách xe buýt:', error);
-      toast.error('Không thể tải danh sách xe buýt');
+      toast.error('Không thể tải danh sách xe buýt: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -58,12 +57,12 @@ const BusesPage = () => {
     }
 
     try {
-      await axios.delete(`http://localhost:5000/api/v1/buses/${id}`);
+      await deleteBus(id);
       toast.success('Xóa xe buýt thành công');
       fetchBuses();
     } catch (error) {
       console.error('Lỗi khi xóa xe buýt:', error);
-      toast.error('Không thể xóa xe buýt');
+      toast.error('Không thể xóa xe buýt: ' + error.message);
     }
   };
 

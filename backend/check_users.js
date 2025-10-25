@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 const dbConfig = require('./src/config/db.config');
 
-async function testConnection() {
+async function checkUsers() {
     try {
         const connection = await mysql.createConnection({
             host: dbConfig.HOST,
@@ -12,15 +12,14 @@ async function testConnection() {
         
         console.log('Kết nối thành công!');
         
-        // Thử query
-        const [rows] = await connection.execute('SELECT * FROM user LIMIT 1');
-        console.log('Dữ liệu từ bảng user:', rows);
+        // Lấy tất cả tài khoản user
+        const [users] = await connection.execute('SELECT username, password, role FROM user');
+        console.log('Danh sách tài khoản:', users);
         
         await connection.end();
     } catch (error) {
-        console.error('Lỗi kết nối:', error.message);
-        console.error('Chi tiết lỗi:', error);
+        console.error('Lỗi:', error.message);
     }
 }
 
-testConnection();
+checkUsers();
