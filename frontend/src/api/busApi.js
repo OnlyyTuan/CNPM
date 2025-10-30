@@ -35,3 +35,17 @@ export const deleteBus = async (id) => {
   const response = await axios.delete(`${API_URL}/${id}`);
   return response.data;
 };
+
+// Lấy vị trí trực tiếp của tất cả xe buýt
+export const getLiveBusLocations = async () => {
+  const response = await axios.get(`${API_URL}/live-location`, { 
+    params: { _ts: Date.now() },
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  });
+  console.log('🌐 Response từ API:', response.data);
+  return response.data;
+};

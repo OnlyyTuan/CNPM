@@ -1,15 +1,28 @@
 // frontend/src/components/DriverList.jsx
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axiosClient from "../api/axiosClient";
 
 function DriverList() {
   const [drivers, setDrivers] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/v1/drivers")
-      .then((res) => setDrivers(res.data))
-      .catch((err) => console.error(err));
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Không có token xác thực");
+      return;
+    }
+
+    axiosClient
+      .get("/drivers")
+      .then((res) => {
+        console.log("Driver data:", res.data);
+        setDrivers(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching drivers:", err);
+        setError(err.message);
+      });
   }, []);
 
   return (

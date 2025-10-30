@@ -14,6 +14,14 @@ const parentRoutes = require("./routes/parentRoutes");
 const scheduleRoutes = require("./routes/scheduleRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
+const routeRoutes = require("./routes/routeRoutes");
+const featureFlagRoutes = require("./routes/featureFlagRoutes");
+
+// MIDDLEWARE
+app.use(helmet());
+app.use(cors());
+app.use(express.json()); // Cho phép phân tích cú pháp JSON
+app.use(express.urlencoded({ extended: true }));
 
 // Root cho API v1 — trả về JSON đơn giản
 app.get("/api/v1/", (req, res) => {
@@ -24,13 +32,13 @@ app.get("/api/v1/", (req, res) => {
   });
 });
 
-// MIDDLEWARE
-app.use(helmet());
-app.use(cors());
-app.use(express.json()); // Cho phép phân tích cú pháp JSON
-app.use(express.urlencoded({ extended: true }));
-
 // ĐỊNH NGHĨA CÁC API ENDPOINT (Sử dụng /api/v1 prefix)
+
+// Debug middleware
+app.use((req, res, next) => {
+  console.log(`📍 ${req.method} ${req.path}`);
+  next();
+});
 
 // Authentication routes
 app.use("/api/v1/auth", authRoutes);
@@ -43,6 +51,8 @@ app.use("/api/v1/parents", parentRoutes);
 app.use("/api/v1/schedules", scheduleRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/assignments", assignmentRoutes);
+app.use("/api/v1/routes", routeRoutes);
+app.use("/api/v1/feature-flags", featureFlagRoutes);
 
 // Health Check Route
 app.get("/api/v1/health", (req, res) => {
@@ -68,5 +78,14 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send({ message: "Lỗi server nội bộ!", error: err.message });
 });
+
+const config = require('./config/app.config');
+const PORT = config.PORT || 5000;
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server đang chạy trên port ${PORT}`);
+  });
+}
 
 module.exports = app;

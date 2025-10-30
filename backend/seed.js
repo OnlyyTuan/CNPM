@@ -1,29 +1,83 @@
-const db = require("./db");
+const db = require("./src/db");
+const { User, Location, Driver, Bus, Parent, Student } = db;
 
 async function seed() {
   try {
     // Locations
-    await db.query(
-      "INSERT INTO Location (id,name,address,latitude,longitude,type,estimatedTime) VALUES ('L1','School A','Hanoi',21.0285,105.8542,'SCHOOL','07:00:00')"
-    );
-    await db.query(
-      "INSERT INTO Location (id,name,address,latitude,longitude,type,estimatedTime) VALUES ('L2','Pickup 1','Hanoi',21.0300,105.8550,'PICKUP_POINT','07:10:00')"
-    );
+    await Location.create({
+      id: 'L1',
+      name: 'School A',
+      address: 'Hanoi',
+      latitude: 21.0285,
+      longitude: 105.8542,
+      type: 'SCHOOL'
+    });
+
+    await Location.create({
+      id: 'L2',
+      name: 'Pickup 1',
+      address: 'Hanoi',
+      latitude: 21.0300,
+      longitude: 105.8550,
+      type: 'PICKUP_POINT'
+    });
+
+    // Create a user for driver first
+    const driverUser = await User.create({
+      id: 'U1',
+      username: 'driver1',
+      email: 'driver1@example.com',
+      password: 'password123',
+      role: 'DRIVER'
+    });
 
     // Drivers
-    await db.query(
-      "INSERT INTO Driver (id,name,phone,licenseNumber,experience,status,currentBus_id) VALUES ('D1','Nguyen Van A','0901234567','L123','5','OFF_DUTY',NULL)"
-    );
+    const driver = await Driver.create({
+      id: 'D1',
+      full_name: 'Nguyen Van A',
+      phone: '0901234567',
+      license_number: 'L123',
+      status: 'OFF_DUTY',
+      user_id: driverUser.id
+    });
 
     // Buses
-    await db.query(
-      "INSERT INTO Bus (id,capacity,currentLocation_id,status,speed,lastUpdate,route_id,driver_id) VALUES ('B1',30,'L1','ACTIVE',0,NOW(),NULL,'D1')"
-    );
+    await Bus.create({
+      id: 'B1',
+      license_plate: '51A-12345',
+      capacity: 30,
+      current_location_id: 'L1',
+      status: 'ACTIVE',
+      speed: 0,
+      driver_id: driver.id
+    });
+
+    // Create a user for parent
+    const parentUser = await User.create({
+      id: 'U2',
+      username: 'parent1',
+      email: 'parent1@example.com',
+      password: 'password123',
+      role: 'PARENT'
+    });
+
+    // Parent
+    const parent = await Parent.create({
+      id: 'P1',
+      full_name: 'Parent Name',
+      phone: '0901111111',
+      address: 'Parent Address',
+      user_id: parentUser.id
+    });
 
     // Students
-    await db.query(
-      "INSERT INTO Student (id,name,class,grade,parentContact,status,assignedBus_id,pickupLocation_id,dropoffLocation_id) VALUES ('S1','Tran Van B','1A',1,'0901111111','WAITING','B1','L2','L1')"
-    );
+    await Student.create({
+      id: 'S1',
+      full_name: 'Tran Van B',
+      class: '1A',
+      grade: 1,
+      parent_id: parent.id
+    });
 
     console.log("Seed data completed!");
     process.exit(0);

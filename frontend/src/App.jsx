@@ -10,6 +10,7 @@ import StudentsPage from './pages/Students/StudentsPage';
 import DriversPage from './pages/Drivers/DriversPage';
 import BusesPage from './pages/Buses/BusesPage';
 import RoutesPage from './pages/Routes/RoutesPage';
+import LiveLocationPage from './pages/Live/LiveLocationPage';
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
           <Route path="drivers" element={<DriversPage />} />
           <Route path="buses" element={<BusesPage />} />
           <Route path="routes" element={<RoutesPage />} />
+          <Route path="live" element={<LiveLocationPage />} />
           <Route path="schedules" element={<SchedulePage />} />
           <Route path="assignments" element={<AssignmentPage />} />
         </Route>

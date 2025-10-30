@@ -10,6 +10,7 @@ import {
   Calendar, 
   GitBranch,
   UserCog,
+  MapPin,
   Menu,
   X,
   LogOut
@@ -27,6 +28,7 @@ const AdminLayout = () => {
     { path: '/admin/students', icon: Users, label: 'Học sinh' },
     { path: '/admin/drivers', icon: UserCog, label: 'Tài xế' },
     { path: '/admin/buses', icon: Bus, label: 'Xe buýt' },
+    { path: '/admin/live', icon: MapPin, label: 'Vị trí xe' },
     { path: '/admin/routes', icon: GitBranch, label: 'Tuyến đường' },
     { path: '/admin/schedules', icon: Calendar, label: 'Lịch trình' },
     { path: '/admin/assignments', icon: GitBranch, label: 'Phân công' },

@@ -24,10 +24,9 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
     }, {
-        tableName: 'user',
-        timestamps: true,
-        createdAt: 'created_at', // Khớp với tên cột trong database
-        updatedAt: 'updated_at', // Khớp với tên cột trong database
+
+        tableName: 'user', // Tên bảng trong DB (quan trọng)
+        timestamps: false
     });
     return User;
 };

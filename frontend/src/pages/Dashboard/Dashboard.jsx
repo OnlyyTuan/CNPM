@@ -25,6 +25,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { getDashboardData } from '../../api/dashboardApi';
+import { getLiveBusLocations } from '../../api/busApi';
 import toast from 'react-hot-toast';
 
 // Component Card thống kê
@@ -60,6 +61,7 @@ const LoadingSpinner = () => (
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
+  const [liveLocations, setLiveLocations] = useState([]);
 
   // Màu sắc cho biểu đồ
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
@@ -67,6 +69,30 @@ const Dashboard = () => {
   // Lấy dữ liệu dashboard
   useEffect(() => {
     fetchDashboardData();
+    // Bắt đầu polling vị trí xe buýt trực tiếp (≤ 3 giây)
+    let canceled = false;
+    const fetchLive = async () => {
+      try {
+        const data = await getLiveBusLocations();
+        if (!canceled) {
+          // Lọc bỏ bản ghi không có toạ độ
+          const cleaned = Array.isArray(data)
+            ? data.filter((x) => x && x.lat != null && x.lng != null)
+            : [];
+          setLiveLocations(cleaned);
+        }
+      } catch (err) {
+        // im lặng để không làm ồn Dashboard nếu endpoint tạm thời lỗi
+        // console.debug('live-location error', err);
+      }
+    };
+    fetchLive();
+    const intervalId = setInterval(fetchLive, 3000);
+
+    return () => {
+      canceled = true;
+      clearInterval(intervalId);
+    };
   }, []);
 
   const fetchDashboardData = async () => {
@@ -216,6 +242,37 @@ const Dashboard = () => {
             </BarChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      {/* Theo dõi Xe buýt Trực tiếp */}
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Theo dõi Xe buýt Trực tiếp</h3>
+        {(!liveLocations || liveLocations.length === 0) ? (
+          <p className="text-gray-600">Chưa có dữ liệu vị trí. Hãy chạy xe hoặc cập nhật vị trí qua API.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Xe buýt</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vĩ độ (lat)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kinh độ (lng)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tốc độ (km/h)</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {liveLocations.map((bus) => (
+                  <tr key={bus.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{bus.licensePlate || bus.id}</td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">{Number(bus.lat).toFixed(5)}</td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">{Number(bus.lng).toFixed(5)}</td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">{bus.speed != null ? Number(bus.speed).toFixed(1) : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Lịch trình gần đây */}
