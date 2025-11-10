@@ -4,16 +4,14 @@ const driverService = {
   // 1. Lấy danh sách Tài xế kèm thông tin Xe buýt (Dùng cho GET /api/v1/drivers)
   async getAllDriversWithBus() {
     return Driver.findAll({
-      // Chỉ định rõ các thuộc tính (cột) dạng camelCase muốn lấy
-      // Điều này giúp loại bỏ các cột snake_case dư thừa (user_id, current_bus_id)
       attributes: [
         "id",
-        "fullName",
+        "full_name",
         "phone",
-        "licenseNumber",
+        "license_number",
         "status",
-        "currentBusId", // Khóa ngoại dạng camelCase
-        "userId", // Khóa ngoại dạng camelCase
+        ["current_bus_id", "currentBusId"],
+        ["user_id", "userId"]
       ],
       include: [
         {

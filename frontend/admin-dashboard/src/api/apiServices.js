@@ -60,6 +60,14 @@ const apiServices = {
     // Đây là API giả định để lấy vị trí xe buýt trực tiếp
     return axiosClient.get("/buses/live-location");
   },
+
+  // ------------------------------------------------------------------
+  // FEATURE FLAGS
+  // ------------------------------------------------------------------
+  getFeatureFlags: () => {
+    // GET /api/v1/feature-flags (Công khai)
+    return axiosClient.get("/feature-flags");
+  },
 };
 
 export default apiServices;

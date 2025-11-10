@@ -40,14 +40,13 @@ const DriversPage = () => {
   const fetchDrivers = async () => {
     try {
       setLoading(true);
-      const response = await getAllDrivers();
-      if (response.success) {
-        setDrivers(response.data);
-        setFilteredDrivers(response.data);
-      }
+      const data = await getAllDrivers();
+      console.log('Driver data:', data);
+      setDrivers(data);
+      setFilteredDrivers(data);
     } catch (error) {
       console.error('Lỗi khi tải danh sách tài xế:', error);
-      toast.error('Không thể tải danh sách tài xế');
+      toast.error('Không thể tải danh sách tài xế: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -59,14 +58,12 @@ const DriversPage = () => {
     }
 
     try {
-      const response = await deleteDriver(id);
-      if (response.success) {
-        toast.success('Xóa tài xế thành công');
-        fetchDrivers();
-      }
+      await deleteDriver(id);
+      toast.success('Xóa tài xế thành công');
+      fetchDrivers();
     } catch (error) {
       console.error('Lỗi khi xóa tài xế:', error);
-      toast.error(error.response?.data?.message || 'Không thể xóa tài xế');
+      toast.error('Không thể xóa tài xế: ' + error.message);
     }
   };
 

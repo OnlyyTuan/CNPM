@@ -14,6 +14,14 @@ const config = {
 
   // Thời gian hết hạn của token (ví dụ: 1 giờ)
   TOKEN_EXPIRATION: "1h",
+
+  // Feature flags (bật/tắt tính năng theo môi trường)
+  FEATURE_FLAGS: {
+    // Bật GPT-5 cho tất cả client (mặc định: true)
+    GPT_5_ENABLED: (process.env.ENABLE_GPT_5 || 'true').toLowerCase() === 'true',
+    // Tuỳ chọn: tên model để client hiển thị
+    GPT_MODEL: process.env.GPT_MODEL || 'gpt-5',
+  },
 };
 
 module.exports = config;

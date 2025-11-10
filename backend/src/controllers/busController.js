@@ -105,6 +105,117 @@ const busController = {
             res.status(500).send({ message: "Lỗi khi xóa xe buýt. Vui lòng kiểm tra các ràng buộc.", error: error.message });
         }
     },
+
+    // [GET] /api/v1/buses/live-location - Danh sách vị trí hiện tại của xe
+    async getLiveLocations(req, res) {
+        try {
+            // Ngăn cache để luôn trả về dữ liệu mới nhất
+            res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.set('Pragma', 'no-cache');
+            res.set('Expires', '0');
+
+            // Query trực tiếp từ DB, tắt cache của Sequelize
+            const buses = await Bus.findAll({
+                attributes: ['id', 'license_plate', 'speed', 'current_location_id'],
+                include: [
+                    {
+                        model: Location,
+                        as: 'CurrentLocation',
+                        attributes: ['id', 'latitude', 'longitude'],
+                        required: false
+                    }
+                ],
+                order: [['license_plate', 'ASC']],
+                raw: false,
+                nest: true,
+                // Buộc reload từ DB mỗi lần
+                rejectOnEmpty: false,
+                useMaster: true
+            });
+
+            const payload = buses.map(b => ({
+                id: b.id,
+                licensePlate: b.license_plate,
+                speed: b.speed ? Number(b.speed) : null,
+                lat: b.CurrentLocation ? Number(b.CurrentLocation.latitude) : null,
+                lng: b.CurrentLocation ? Number(b.CurrentLocation.longitude) : null,
+            }));
+
+            console.log(`[${new Date().toISOString()}] Live locations:`, JSON.stringify(payload));
+            res.status(200).json(payload);
+        } catch (error) {
+            console.error('Lỗi khi lấy live locations:', error.message);
+            res.status(500).json({ message: 'Không thể lấy vị trí trực tiếp.' });
+        }
+    },
+
+    // [PUT] /api/v1/buses/:id/location - Cập nhật vị trí hiện tại của xe (admin/driver)
+    async updateLocation(req, res) {
+        const { id } = req.params; // bus id
+        const { latitude, longitude, speed } = req.body || {};
+        if (latitude == null || longitude == null) {
+            return res.status(400).json({ message: 'Thiếu latitude/longitude' });
+        }
+        try {
+            const bus = await Bus.findByPk(id);
+            if (!bus) return res.status(404).json({ message: 'Không tìm thấy xe buýt' });
+
+            // Đảm bảo có 1 Location hiện hành cho bus để JOIN nhanh
+            let locId = bus.current_location_id;
+            if (!locId) {
+                locId = `CUR_${id}`; // id ổn định theo bus
+                // Tạo mới nếu chưa có
+                await Location.create({
+                    id: locId,
+                    name: `Current of ${id}`,
+                    latitude,
+                    longitude,
+                    type: 'bus_current',
+                });
+                await Bus.update({ current_location_id: locId }, { where: { id } });
+            } else {
+                // Cập nhật tọa độ vị trí hiện hành
+                const updated = await Location.update(
+                    { latitude, longitude }, 
+                    { where: { id: locId } }
+                );
+                console.log(`✅ Đã cập nhật Location ${locId}: lat=${latitude}, lng=${longitude}, rows affected=${updated[0]}`);
+            }
+
+            // Cập nhật tốc độ (nếu gửi kèm)
+            if (speed != null) {
+                await Bus.update({ speed }, { where: { id } });
+                console.log(`✅ Đã cập nhật speed=${speed} cho bus ${id}`);
+            }
+
+            // Tuỳ chọn: ghi log lịch sử (nếu có bảng LocationLog)
+            try {
+                await db.sequelize.query(
+                    'INSERT INTO locationlog (bus_id, timestamp, latitude, longitude, speed) VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?)',
+                    { replacements: [id, latitude, longitude, speed ?? null] }
+                );
+            } catch (logErr) {
+                // Không chặn quy trình chính nếu bảng không tồn tại
+                console.warn('Ghi log vị trí thất bại (bỏ qua):', logErr.message);
+            }
+
+            // Trả về dữ liệu mới nhất
+            const updated = await Bus.findByPk(id, {
+                attributes: ['id', 'license_plate', 'speed', 'current_location_id'],
+                include: [{ model: Location, as: 'CurrentLocation', attributes: ['id', 'latitude', 'longitude'] }]
+            });
+            return res.status(200).json({
+                id: updated.id,
+                licensePlate: updated.license_plate,
+                speed: updated.speed ? Number(updated.speed) : null,
+                lat: updated.CurrentLocation ? Number(updated.CurrentLocation.latitude) : null,
+                lng: updated.CurrentLocation ? Number(updated.CurrentLocation.longitude) : null,
+            });
+        } catch (error) {
+            console.error('Lỗi cập nhật vị trí xe:', error.message);
+            res.status(500).json({ message: 'Không thể cập nhật vị trí xe.' });
+        }
+    },
 };
 
 module.exports = busController;

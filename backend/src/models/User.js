@@ -1,3 +1,4 @@
+// backend/src/models/User.js
 module.exports = (sequelize, DataTypes) => {
     const User = sequelize.define("User", {
         id: {
@@ -23,11 +24,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(50), // ADMIN, DRIVER, PARENT
             allowNull: false,
         },
+        // Sequelize sẽ tự động thêm createdAt và updatedAt
     }, {
-        tableName: 'user',
-        timestamps: true,
-        createdAt: 'created_at', // Khớp với tên cột trong database
-        updatedAt: 'updated_at', // Khớp với tên cột trong database
+        tableName: 'user', // Tên bảng trong DB (quan trọng)
+        timestamps: false
     });
     return User;
 };

@@ -39,6 +39,15 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   logging: false, // Tắt log truy vấn SQL
   // Thiết lập múi giờ mặc định cho Sequelize
   timezone: "+07:00",
+  dialectOptions: {
+    charset: 'utf8mb4',
+    collate: 'utf8mb4_unicode_ci'
+  },
+  // TẮT CACHE để luôn lấy dữ liệu mới từ DB
+  benchmark: false,
+  query: {
+    raw: false
+  }
 });
 
 const db = {};
@@ -54,6 +63,7 @@ db.User = require("./models/User")(sequelize, Sequelize.DataTypes);
 db.Parent = require("./models/Parent")(sequelize, Sequelize.DataTypes);
 db.Location = require("./models/Location")(sequelize, Sequelize.DataTypes);
 db.Route = require("./models/Route")(sequelize, Sequelize.DataTypes);
+db.RouteWaypoint = require("./models/RouteWaypoint")(sequelize, Sequelize.DataTypes);
 db.Bus = require("./models/Bus")(sequelize, Sequelize.DataTypes);
 db.Driver = require("./models/Driver")(sequelize, Sequelize.DataTypes);
 db.Student = require("./models/Student")(sequelize, Sequelize.DataTypes);
@@ -80,7 +90,7 @@ db.Driver.belongsTo(db.User, { foreignKey: "user_id", as: "UserAccount" });
 // --- Bus & Driver (Quan hệ 1-1, hai chiều) ---
 // 1. Driver biết đang lái xe nào
 db.Driver.belongsTo(db.Bus, {
-  foreignKey: "currentBus_id",
+  foreignKey: "current_bus_id",
   as: "CurrentBus",
   onDelete: "SET NULL",
 });
@@ -136,6 +146,18 @@ db.Student.belongsTo(db.Location, {
   foreignKey: "dropoff_location_id",
   as: "DropoffLocation",
   // onDelete: "RESTRICT",
+});
+
+// --- Route & RouteWaypoint (Lộ trình và các điểm trên lộ trình) ---
+// Route (1-N) RouteWaypoint
+db.Route.hasMany(db.RouteWaypoint, {
+  foreignKey: "route_id",
+  as: "Waypoints",
+  onDelete: "CASCADE",
+});
+db.RouteWaypoint.belongsTo(db.Route, {
+  foreignKey: "route_id",
+  as: "Route",
 });
 
 // ===================================
