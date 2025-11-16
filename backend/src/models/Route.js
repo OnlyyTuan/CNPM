@@ -8,12 +8,12 @@ module.exports = (sequelize, DataTypes) => {
         },
         routeName: {
             type: DataTypes.STRING(100),
-            field: 'route_name',
+
             allowNull: false,
         },
         estimatedDuration: {
             type: DataTypes.INTEGER,
-            field: 'estimated_duration',
+
         },
         distance: {
             type: DataTypes.DECIMAL(10, 2),

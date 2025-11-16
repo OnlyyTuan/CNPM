@@ -174,7 +174,8 @@ class AssignmentController {
           d.status as driver_status,
           r.id as route_id,
           r.route_name,
-          r.distance
+          r.distance,
+          r.estimated_duration
         FROM bus b
         LEFT JOIN driver d ON b.driver_id = d.id
         LEFT JOIN route r ON b.route_id = r.id
@@ -231,7 +232,8 @@ class AssignmentController {
         SELECT 
           id,
           route_name,
-          distance
+          distance,
+          estimated_duration
         FROM route
         ORDER BY route_name
       `);

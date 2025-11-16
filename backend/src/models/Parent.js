@@ -11,7 +11,6 @@ module.exports = (sequelize, DataTypes) => {
       },
       fullName: {
         type: DataTypes.STRING(100),
-        field: "full_name", // Ánh xạ tới cột SQL
       },
       phone: {
         type: DataTypes.STRING(20),

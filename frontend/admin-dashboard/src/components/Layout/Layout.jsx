@@ -1,10 +1,18 @@
 // frontend/admin-dashboard/src/components/Layout/Layout.jsx
 
-import React from "react";
+import React, { useState } from "react";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
+import ChatIcon from "../Chat/ChatIcon";
+import ChatWindow from "../Chat/ChatWindow";
 
 const Layout = ({ children }) => {
+  const [isChatOpen, setChatOpen] = useState(false);
+
+  const toggleChat = () => {
+    setChatOpen(!isChatOpen);
+  };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar />
@@ -14,6 +22,8 @@ const Layout = ({ children }) => {
           {children}
         </main>
       </div>
+      <ChatIcon onClick={toggleChat} />
+      <ChatWindow isOpen={isChatOpen} onClose={toggleChat} />
     </div>
   );
 };

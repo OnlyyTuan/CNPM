@@ -8,25 +8,34 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         allowNull: false,
       },
-      capacity: { type: DataTypes.INTEGER },
-      current_location_id: { type: DataTypes.STRING(255) }, // Khóa ngoại Location
-      status: { type: DataTypes.STRING(50) },
-      speed: { type: DataTypes.DECIMAL(5, 2) },
-      //lastUpdate: { type: DataTypes.DATE }, // TIMESTAMP trong SQL, dùng DATE
-      license_plate: {
+      capacity: {
+        type: DataTypes.INTEGER,
+      },
+      currentLocationId: {
+        type: DataTypes.STRING(255),
+      },
+      status: {
+        type: DataTypes.STRING(50),
+      },
+      speed: {
+        type: DataTypes.DECIMAL(5, 2),
+      },
+      licensePlate: {
         type: DataTypes.STRING(20),
         unique: true,
       },
-      route_id: { type: DataTypes.STRING(255) }, // Khóa ngoại Route (Admin 2)
-      driver_id: {
-        // UNIQUE Constraint
+      routeId: {
         type: DataTypes.STRING(255),
-        unique: true, // Quan trọng: Đảm bảo 1 xe chỉ có 1 tài xế
+      },
+      driverId: {
+        type: DataTypes.STRING(255),
+        unique: true,
       },
     },
     {
       tableName: "bus",
-      timestamps: false, // Bảng Bus không có cột created_at/updated_at trong SQL
+      timestamps: false,
+      underscored: true,
     }
   );
   return Bus;

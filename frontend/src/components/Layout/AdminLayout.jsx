@@ -1,7 +1,7 @@
 // frontend/src/components/Layout/AdminLayout.jsx
 // Layout chính cho Admin với Sidebar navigation
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -16,11 +16,34 @@ import {
   LogOut
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ChatIcon from '../Chat/ChatIcon';
+import AdminChatWindow from '../Chat/AdminChatWindow';
+import useAuthStore from '../../hooks/useAuthStore';
+import socketService from '../../api/socketService';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isChatOpen, setChatOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  const { isLoggedIn, initializeSocketListeners, logout } = useAuthStore((state) => ({
+    isLoggedIn: state.isLoggedIn,
+    initializeSocketListeners: state.initializeSocketListeners,
+    logout: state.logout,
+  }));
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      console.log('User is logged in, initializing socket...');
+      socketService.initSocket();
+      initializeSocketListeners();
+    }
+  }, [isLoggedIn, initializeSocketListeners]);
+
+  const toggleChat = () => {
+    setChatOpen(!isChatOpen);
+  };
 
   // Danh sách menu items
   const menuItems = [
@@ -40,8 +63,7 @@ const AdminLayout = () => {
   // Xử lý đăng xuất
   const handleLogout = () => {
     if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      logout(); // Use the logout action from the store
       toast.success('Đăng xuất thành công');
       navigate('/login/admin');
     }
@@ -137,6 +159,8 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+      <ChatIcon onClick={toggleChat} />
+      <AdminChatWindow isOpen={isChatOpen} onClose={toggleChat} />
     </div>
   );
 };

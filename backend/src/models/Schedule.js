@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         allowNull: false,
       },
-      bus_id: {
+      busId: {
         type: DataTypes.STRING(255),
         allowNull: false,
         references: {
@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id'
         }
       },
-      route_id: {
+      routeId: {
         type: DataTypes.STRING(255),
         allowNull: false,
         references: {
@@ -26,11 +26,11 @@ module.exports = (sequelize, DataTypes) => {
           key: 'id'
         }
       },
-      start_time: {
+      startTime: {
         type: DataTypes.DATE,
         allowNull: false,
       },
-      end_time: {
+      endTime: {
         type: DataTypes.DATE,
         allowNull: false,
       },
@@ -42,6 +42,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: "schedule",
       timestamps: false, // Không sử dụng createdAt và updatedAt
+      underscored: true,
     }
   );
 

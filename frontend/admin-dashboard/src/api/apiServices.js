@@ -68,6 +68,14 @@ const apiServices = {
     // GET /api/v1/feature-flags (Công khai)
     return axiosClient.get("/feature-flags");
   },
+
+  // ------------------------------------------------------------------
+  // CHAT SERVICE
+  // ------------------------------------------------------------------
+  getChatHistory: (userId) => {
+    // GET /api/v1/messages/history/:userId (Yêu cầu Token)
+    return axiosClient.get(`/messages/history/${userId}`);
+  },
 };
 
 export default apiServices;

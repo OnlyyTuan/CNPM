@@ -34,8 +34,31 @@ const userService = {
             await t.rollback(); 
             throw error; 
         }
+    },
+
+    /** Lấy người dùng quản trị đầu tiên */
+    async getFirstAdmin() {
+        try {
+            // Ưu tiên tìm admin có ID cụ thể 'U001'
+            let admin = await User.findOne({
+                where: { id: 'U001', role: 'admin' },
+                attributes: ['id', 'username', 'email', 'role'],
+            });
+
+            // Nếu không tìm thấy 'U001', tìm admin bất kỳ và sắp xếp để đảm bảo tính nhất quán
+            if (!admin) {
+                admin = await User.findOne({
+                    where: { role: 'admin' },
+                    attributes: ['id', 'username', 'email', 'role'],
+                    order: [['username', 'ASC']], // Sắp xếp theo username để kết quả nhất quán
+                });
+            }
+            return admin;
+        } catch (error) {
+            console.error('Error fetching admin user:', error);
+            throw new Error('Could not fetch admin user');
+        }
     }
-    // ... Thêm các hàm login, get User by role sau ...
 };
 
 module.exports = userService;

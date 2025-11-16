@@ -128,3 +128,19 @@ exports.deleteUser = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * [GET] /api/v1/users/admin - Lấy thông tin admin đầu tiên
+ * Yêu cầu: DRIVER
+ */
+exports.getFirstAdmin = async (req, res, next) => {
+    try {
+        const admin = await userService.getFirstAdmin();
+        if (!admin) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng quản trị.' });
+        }
+        res.status(200).json(admin);
+    } catch (error) {
+        next(error);
+    }
+};

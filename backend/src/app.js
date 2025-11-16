@@ -16,6 +16,8 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
 const routeRoutes = require("./routes/routeRoutes");
 const featureFlagRoutes = require("./routes/featureFlagRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 // MIDDLEWARE
 app.use(helmet());
@@ -53,6 +55,8 @@ app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/assignments", assignmentRoutes);
 app.use("/api/v1/routes", routeRoutes);
 app.use("/api/v1/feature-flags", featureFlagRoutes);
+app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/users", userRoutes);
 
 // Health Check Route
 app.get("/api/v1/health", (req, res) => {

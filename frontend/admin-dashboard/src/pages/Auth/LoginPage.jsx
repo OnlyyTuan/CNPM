@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useAuthStore from '../../hooks/useAuthStore';
-import apiServices from '../../api/apiServices';
+import useAuthStore from '../../../hooks/useAuthStore.js';
+import apiServices from '../../../api/adminApi.js';
 
 const LoginPage = () => {
     // Lấy action 'login' từ store
