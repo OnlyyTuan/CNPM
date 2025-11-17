@@ -5,15 +5,20 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import StudentModal from '../../components/Modals/StudentModal';
 
 const StudentsPage = () => {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [buses, setBuses] = useState([]);
 
   useEffect(() => {
     fetchStudents();
+    fetchBuses();
   }, []);
 
   useEffect(() => {
@@ -42,6 +47,23 @@ const StudentsPage = () => {
     }
   };
 
+  const fetchBuses = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/v1/buses');
+      // Bus API trả về array trực tiếp, không có success wrapper
+      if (Array.isArray(response.data)) {
+        setBuses(response.data);
+      } else if (response.data.success && response.data.data) {
+        setBuses(response.data.data);
+      } else {
+        setBuses([]);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách xe buýt:', error);
+      setBuses([]);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm('Bạn có chắc muốn xóa học sinh này?')) {
       return;
@@ -54,6 +76,31 @@ const StudentsPage = () => {
     } catch (error) {
       console.error('Lỗi khi xóa học sinh:', error);
       toast.error('Không thể xóa học sinh');
+    }
+  };
+
+  const handleAddStudent = () => {
+    setSelectedStudent(null);
+    setModalOpen(true);
+  };
+
+  const handleEditStudent = (student) => {
+    setSelectedStudent(student);
+    setModalOpen(true);
+  };
+
+  const handleSaveStudent = async (formData) => {
+    try {
+      if (selectedStudent) {
+        // Update existing student
+        await axios.put(`http://localhost:5000/api/v1/students/${selectedStudent.id}`, formData);
+      } else {
+        // Create new student
+        await axios.post('http://localhost:5000/api/v1/students', formData);
+      }
+      fetchStudents();
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -73,7 +120,10 @@ const StudentsPage = () => {
           <h2 className="text-3xl font-bold text-gray-900">Quản lý Học sinh</h2>
           <p className="text-gray-600 mt-1">Danh sách tất cả học sinh trong hệ thống</p>
         </div>
-        <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+        <button 
+          onClick={handleAddStudent}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+        >
           <Plus size={20} />
           <span>Thêm Học sinh</span>
         </button>
@@ -172,10 +222,18 @@ const StudentsPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900" title="Xem chi tiết">
+                      <button 
+                        onClick={() => handleEditStudent(student)}
+                        className="text-blue-600 hover:text-blue-900" 
+                        title="Xem chi tiết"
+                      >
                         <Eye size={18} />
                       </button>
-                      <button className="text-yellow-600 hover:text-yellow-900" title="Chỉnh sửa">
+                      <button 
+                        onClick={() => handleEditStudent(student)}
+                        className="text-yellow-600 hover:text-yellow-900" 
+                        title="Chỉnh sửa"
+                      >
                         <Edit size={18} />
                       </button>
                       <button
@@ -199,6 +257,15 @@ const StudentsPage = () => {
           <p className="text-gray-500">Không tìm thấy học sinh nào</p>
         </div>
       )}
+
+      {/* Student Modal */}
+      <StudentModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        student={selectedStudent}
+        onSave={handleSaveStudent}
+        buses={buses}
+      />
     </div>
   );
 };

@@ -5,6 +5,10 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, Bus as BusIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAllBuses, deleteBus } from '../../api/busApi';
+import { getAllRoutes } from '../../api/routeApi';
+import { getAllDrivers } from '../../api/driverApi';
+import BusModal from '../../components/Modals/BusModal';
+import axios from 'axios';
 
 const BusesPage = () => {
   const [buses, setBuses] = useState([]);
@@ -12,9 +16,15 @@ const BusesPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedBus, setSelectedBus] = useState(null);
+  const [routes, setRoutes] = useState([]);
+  const [drivers, setDrivers] = useState([]);
 
   useEffect(() => {
     fetchBuses();
+    fetchRoutes();
+    fetchDrivers();
   }, []);
 
   useEffect(() => {
@@ -45,9 +55,56 @@ const BusesPage = () => {
       setFilteredBuses(data);
     } catch (error) {
       console.error('Lỗi khi tải danh sách xe buýt:', error);
-      toast.error('Không thể tải danh sách xe buýt: ' + error.message);
+      toast.error('Không thể tải danh sách xe buÿt: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRoutes = async () => {
+    try {
+      const response = await getAllRoutes();
+      if (response.success) {
+        setRoutes(response.data);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách tuyến đường:', error);
+    }
+  };
+
+  const fetchDrivers = async () => {
+    try {
+      const response = await getAllDrivers();
+      if (response.success) {
+        setDrivers(response.data);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách tài xế:', error);
+    }
+  };
+
+  const handleAddBus = () => {
+    setSelectedBus(null);
+    setModalOpen(true);
+  };
+
+  const handleEditBus = (bus) => {
+    setSelectedBus(bus);
+    setModalOpen(true);
+  };
+
+  const handleSaveBus = async (formData) => {
+    try {
+      if (selectedBus) {
+        // Update existing bus
+        await axios.put(`http://localhost:5000/api/v1/buses/${selectedBus.id}`, formData);
+      } else {
+        // Create new bus
+        await axios.post('http://localhost:5000/api/v1/buses', formData);
+      }
+      fetchBuses();
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -82,7 +139,10 @@ const BusesPage = () => {
           <h2 className="text-3xl font-bold text-gray-900">Quản lý Xe buýt</h2>
           <p className="text-gray-600 mt-1">Danh sách tất cả xe buýt trong hệ thống</p>
         </div>
-        <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+        <button 
+          onClick={handleAddBus}
+          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+        >
           <Plus size={20} />
           <span>Thêm Xe buýt</span>
         </button>
@@ -200,11 +260,15 @@ const BusesPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-yellow-600 hover:text-yellow-900" title="Chỉnh sửa">
+                      <button 
+                        onClick={() => handleEditBus(bus)}
+                        className="text-yellow-600 hover:text-yellow-900" 
+                        title="Chỉnh sửa"
+                      >
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(bus.id)}
+                        onClick={() => handleDeleteBus(bus.id)}
                         className="text-red-600 hover:text-red-900"
                         title="Xóa"
                       >
@@ -224,6 +288,16 @@ const BusesPage = () => {
           <p className="text-gray-500">Không tìm thấy xe buýt nào</p>
         </div>
       )}
+
+      {/* Bus Modal */}
+      <BusModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        bus={selectedBus}
+        onSave={handleSaveBus}
+        routes={routes}
+        drivers={drivers}
+      />
     </div>
   );
 };

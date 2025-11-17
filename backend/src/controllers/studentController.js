@@ -47,10 +47,51 @@ const studentController = {
         try {
             const { id, full_name, class: studentClass, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id } = req.body;
             
+            // Validate required fields
+            if (!id || !full_name || !studentClass || !grade || !parent_contact) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Thiếu thông tin bắt buộc: id, full_name, class, grade, parent_contact'
+                });
+            }
+            
+            // Validate student ID format
+            if (!/^S[0-9]{3,}$/.test(id)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Mã học sinh phải có định dạng S001, S002...'
+                });
+            }
+            
+            // Convert empty strings to null for optional fields
+            const processedData = {
+                id,
+                full_name,
+                class: studentClass,
+                grade,
+                parent_contact,
+                status: status || 'WAITING',
+                parent_id: (parent_id && parent_id.trim()) ? parent_id : null,
+                assigned_bus_id: (assigned_bus_id && assigned_bus_id.trim()) ? assigned_bus_id : null,
+                pickup_location_id: (pickup_location_id && pickup_location_id.trim()) ? pickup_location_id : null,
+                dropoff_location_id: (dropoff_location_id && dropoff_location_id.trim()) ? dropoff_location_id : null
+            };
+            
             await db.query(`
                 INSERT INTO student (id, full_name, class, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `, [id, full_name, studentClass, grade, parent_contact, status || 'WAITING', parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id]);
+            `, [
+                processedData.id,
+                processedData.full_name,
+                processedData.class,
+                processedData.grade,
+                processedData.parent_contact,
+                processedData.status,
+                processedData.parent_id,
+                processedData.assigned_bus_id,
+                processedData.pickup_location_id,
+                processedData.dropoff_location_id
+            ]);
             
             res.status(201).json({
                 success: true,
@@ -58,6 +99,15 @@ const studentController = {
             });
         } catch (error) {
             console.error('Lỗi khi tạo học sinh:', error);
+            
+            // Handle duplicate key error
+            if (error.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Mã học sinh đã tồn tại'
+                });
+            }
+            
             res.status(400).json({ 
                 success: false,
                 message: "Lỗi khi tạo học sinh mới.", 
