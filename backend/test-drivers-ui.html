@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Drivers API</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 50px auto;
+        padding: 20px;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .success {
+        background: #4caf50;
+        color: white;
+        border: none;
+      }
+      .error {
+        background: #f44336;
+        color: white;
+        border: none;
+      }
+      pre {
+        background: #f4f4f4;
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+      }
+      th {
+        background-color: #4caf50;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Test Drivers API</h1>
+
+    <div>
+      <button class="success" onclick="testWithoutToken()">
+        Test WITHOUT Token
+      </button>
+      <button class="success" onclick="testWithToken()">
+        Test WITH Token (Login first)
+      </button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+      async function testWithoutToken() {
+        const resultDiv = document.getElementById("result");
+        try {
+          const response = await fetch("http://localhost:5000/api/v1/drivers");
+          const data = await response.json();
+
+          if (response.ok) {
+            resultDiv.innerHTML = `
+                        <h2>✅ Success (No Token Required)</h2>
+                        <p>Received ${data.length} drivers</p>
+                        ${renderTable(data)}
+                    `;
+          } else {
+            resultDiv.innerHTML = `
+                        <h2>❌ Error</h2>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+          }
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <h2>❌ Network Error</h2>
+                    <pre>${error.message}</pre>
+                `;
+        }
+      }
+
+      async function testWithToken() {
+        const resultDiv = document.getElementById("result");
+        try {
+          // 1. Login first
+          const loginResponse = await fetch(
+            "http://localhost:5000/api/v1/auth/login",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: "admin1", password: "123456" }),
+            }
+          );
+
+          const loginData = await loginResponse.json();
+
+          if (!loginResponse.ok) {
+            throw new Error("Login failed: " + JSON.stringify(loginData));
+          }
+
+          const token = loginData.data.token;
+
+          // 2. Get drivers with token
+          const driversResponse = await fetch(
+            "http://localhost:5000/api/v1/drivers",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          const driversData = await driversResponse.json();
+
+          if (driversResponse.ok) {
+            resultDiv.innerHTML = `
+                        <h2>✅ Success (With Token)</h2>
+                        <p>Token: ${token.substring(0, 30)}...</p>
+                        <p>Received ${driversData.length} drivers</p>
+                        ${renderTable(driversData)}
+                    `;
+          } else {
+            resultDiv.innerHTML = `
+                        <h2>❌ Error</h2>
+                        <pre>${JSON.stringify(driversData, null, 2)}</pre>
+                    `;
+          }
+        } catch (error) {
+          resultDiv.innerHTML = `
+                    <h2>❌ Error</h2>
+                    <pre>${error.message}</pre>
+                `;
+        }
+      }
+
+      function renderTable(drivers) {
+        return `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tên</th>
+                            <th>Số điện thoại</th>
+                            <th>GPLX</th>
+                            <th>Trạng thái</th>
+                            <th>Xe hiện tại</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${drivers
+                          .map(
+                            (d) => `
+                            <tr>
+                                <td>${d.id}</td>
+                                <td>${d.full_name}</td>
+                                <td>${d.phone}</td>
+                                <td>${d.license_number}</td>
+                                <td>${d.status}</td>
+                                <td>${d.currentBusId || "N/A"}</td>
+                            </tr>
+                        `
+                          )
+                          .join("")}
+                    </tbody>
+                </table>
+            `;
+      }
+    </script>
+  </body>
+</html>
