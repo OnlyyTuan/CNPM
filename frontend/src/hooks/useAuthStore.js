@@ -16,14 +16,21 @@ const useAuthStore = create((set, get) => ({
 
   // Auth actions
   login: ({ token, user }) => {
+    // Store credentials in localStorage first, as socketService reads from it
+    localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(user));
+
+    // Update the state
     set({
       token: token,
       user: user,
       isLoggedIn: true,
       role: user.role,
     });
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
+
+    // Now, initialize the socket connection and listeners with the new credentials
+    socketService.initSocket();
+    get().initializeSocketListeners();
   },
 
   logout: () => {
