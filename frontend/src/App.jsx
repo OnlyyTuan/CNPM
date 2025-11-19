@@ -10,7 +10,8 @@ import AdminLayout from "./components/Layout/AdminLayout";
 import LoginPage from "./pages/Auth/LoginPage";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import AccountManagement from "./pages/Dashboard/AccountManagement";
+import AccountManagement from "./pages/User/AccountManagement";
+import ParentManagement from "./pages/Parents/ParentManagement";
 import SchedulePage from "./pages/Schedules/SchedulePage";
 import AssignmentPage from "./pages/Assignments/AssignmentPage";
 import StudentsPage from "./pages/Students/StudentsPage";
@@ -76,6 +77,7 @@ function App() {
           <Route path="schedules" element={<SchedulePage />} />
           <Route path="assignments" element={<AssignmentPage />} />
           <Route path="accounts" element={<AccountManagement />} />
+          <Route path="parents" element={<ParentManagement />} />
         </Route>
       </Routes>
     </Router>

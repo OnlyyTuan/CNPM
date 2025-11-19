@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import userApi from "../../api/userApi";
 import parentApi from "../../api/parentApi";
-import { getAllDrivers, updateDriver } from "../../api/driverApi";
+import { getAllDrivers, updateDriver, createDriver } from "../../api/driverApi";
 import { toast } from "react-hot-toast";
 import { Search, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import /* Link removed */ "react-router-dom";
 import { emitEntityChange, onEntityChange } from "../../utils/eventBus";
 import AccountModal from "../../components/Account/AccountModal";
 import CreateAccountModal from "../../components/Account/CreateAccountModal";
@@ -19,6 +20,7 @@ const AccountManagement = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [createInitialData, setCreateInitialData] = useState(null);
 
   const fetchAll = async () => {
     try {
@@ -163,7 +165,11 @@ const AccountManagement = () => {
       if (!q) return true;
       const profile = u.role === "parent" ? parentsMap[u.id] : driversMap[u.id];
       const name =
-        profile?.name || profile?.full_name || profile?.displayName || "";
+        profile?.fullName ||
+        profile?.name ||
+        profile?.full_name ||
+        profile?.displayName ||
+        "";
       return (
         String(u.username || "")
           .toLowerCase()
@@ -192,13 +198,15 @@ const AccountManagement = () => {
             Danh sách tài khoản (Phụ huynh & Tài xế)
           </p>
         </div>
-        <button
-          onClick={() => setCreateOpen(true)}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-        >
-          <Plus size={18} />
-          <span>Tạo tài khoản mới</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setCreateOpen(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
+          >
+            <Plus size={18} />
+            <span>Tạo tài khoản mới</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow p-4">
@@ -214,6 +222,40 @@ const AccountManagement = () => {
               placeholder="Tìm theo username, email, tên hoặc ID..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+
+          {/* Role filter: All / Parent / Driver */}
+          <div className="mt-3 flex items-center space-x-2">
+            <button
+              onClick={() => setRoleFilter("all")}
+              className={`px-3 py-1 rounded ${
+                roleFilter === "all"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-800"
+              }`}
+            >
+              Tất cả
+            </button>
+            <button
+              onClick={() => setRoleFilter("parent")}
+              className={`px-3 py-1 rounded ${
+                roleFilter === "parent"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-800"
+              }`}
+            >
+              Phụ huynh
+            </button>
+            <button
+              onClick={() => setRoleFilter("driver")}
+              className={`px-3 py-1 rounded ${
+                roleFilter === "driver"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-800"
+              }`}
+            >
+              Tài xế
+            </button>
           </div>
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -279,6 +321,7 @@ const AccountManagement = () => {
                   const profile =
                     u.role === "parent" ? parentsMap[u.id] : driversMap[u.id];
                   const displayName =
+                    profile?.fullName ||
                     profile?.name ||
                     profile?.full_name ||
                     profile?.displayName ||
@@ -378,7 +421,10 @@ const AccountManagement = () => {
                           {u.role === "parent" ? "Phụ huynh" : "Tài xế"}
                         </div>
                         <div className="mt-1 text-sm text-gray-800">
-                          {profile.full_name || profile.name || "-"}
+                          {profile.fullName ||
+                            profile.full_name ||
+                            profile.name ||
+                            "-"}
                         </div>
                         <div className="text-sm text-gray-600">
                           SĐT: {profile.phone || profile.parent_contact || "-"}
@@ -426,6 +472,10 @@ const AccountManagement = () => {
                   setModalOpen(false);
                   fetchAll();
                 }}
+                onRequestCreate={(prefill) => {
+                  setCreateInitialData(prefill || null);
+                  setCreateOpen(true);
+                }}
               />
             );
           })()}
@@ -433,7 +483,11 @@ const AccountManagement = () => {
 
       <CreateAccountModal
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        initialData={createInitialData}
+        onClose={() => {
+          setCreateOpen(false);
+          setCreateInitialData(null);
+        }}
         onCreated={() => fetchAll()}
       />
     </div>
@@ -445,7 +499,7 @@ const EditUserForm = ({ user, onSaved, profile }) => {
   const [email, setEmail] = React.useState(user.email || "");
   const [username, setUsername] = React.useState(user.username || "");
   const [name, setName] = React.useState(
-    profile?.full_name || profile?.name || ""
+    profile?.fullName || profile?.full_name || profile?.name || ""
   );
   const [loading, setLoading] = React.useState(false);
 
@@ -467,21 +521,131 @@ const EditUserForm = ({ user, onSaved, profile }) => {
         return;
       }
 
-      // update user basic info
-      await userApi.updateUser(user.id, { email, username });
+      // update user basic info; if user row doesn't exist (404) we'll fall back to creating user+profile
+      try {
+        await userApi.updateUser(user.id, { email, username });
+      } catch (updateErr) {
+        // If user not found (404), try to update parent profile directly (in case parent exists without user)
+        if (updateErr?.response?.status === 404) {
+          try {
+            // Try to find a parent linked to this user id
+            const parentsRes = await parentApi.getAllParents();
+            const parentsList = parentsRes?.data ?? parentsRes ?? [];
+            const existing = (parentsList || []).find((p) => {
+              const uid =
+                p.user_id ??
+                p.userId ??
+                (p.UserAccount && p.UserAccount.id) ??
+                null;
+              return String(uid) === String(user.id);
+            });
 
-      // update profile name if provided
-      if (user.role === "parent" && profile && (name || name === "")) {
+            if (existing) {
+              // Update parent name directly
+              await parentApi.updateParent(existing.id, {
+                parentData: { fullName: name },
+              });
+              toast.success(
+                "Cập nhật tên phụ huynh thành công (không cần user row)"
+              );
+              emitEntityChange("parent");
+              onSaved && onSaved();
+              setLoading(false);
+              return;
+            }
+
+            // If not a parent, or no parent row found, try driver profile fallback
+            try {
+              const driversRes = await getAllDrivers();
+              const driversList = driversRes?.data ?? driversRes ?? [];
+              const existingDriver = (driversList || []).find((d) => {
+                const uid =
+                  d.user_id ?? d.userId ?? (d.User && d.User.id) ?? null;
+                return String(uid) === String(user.id);
+              });
+              if (existingDriver) {
+                // Update driver name directly
+                await updateDriver(existingDriver.id, {
+                  driverData: { fullName: name },
+                });
+                toast.success(
+                  "Cập nhật tên tài xế thành công (không cần user row)"
+                );
+                emitEntityChange("driver");
+                onSaved && onSaved();
+                setLoading(false);
+                return;
+              }
+            } catch (drvErr) {
+              console.warn("Driver fallback failed", drvErr);
+            }
+
+            // If no parent exists, fall back to opening create modal so admin can create the missing user/profile
+            const prefill = {
+              role: user.role,
+              username,
+              email,
+              fullName: name,
+              id: user.id,
+            };
+            toast(
+              "Người dùng không tồn tại — mở modal tạo tài khoản để tạo mới (vui lòng kiểm tra thông tin)."
+            );
+            if (typeof onRequestCreate === "function") {
+              onRequestCreate(prefill);
+            }
+            setLoading(false);
+            return;
+          } catch (e) {
+            console.error("Failed to handle missing user fallback", e);
+            toast.error("Không thể xử lý trường hợp người dùng không tồn tại.");
+            setLoading(false);
+            return;
+          }
+        }
+        // rethrow other errors to be handled by outer catch
+        throw updateErr;
+      }
+
+      // update profile name if provided (robust: ensure parent exists then update)
+      if (user.role === "parent") {
         try {
-          await parentApi.updateParent(profile.id, {
-            parentData: { full_name: name },
+          // Ensure we have the authoritative parent record from server
+          const parentsRes = await parentApi.getAllParents();
+          const parentsList = parentsRes?.data ?? parentsRes ?? [];
+          const existing = (parentsList || []).find((p) => {
+            const uid =
+              p.user_id ??
+              p.userId ??
+              (p.UserAccount && p.UserAccount.id) ??
+              null;
+            return String(uid) === String(user.id);
           });
+
+          if (existing) {
+            // update existing parent
+            await parentApi.updateParent(existing.id, {
+              parentData: { fullName: name },
+            });
+          } else {
+            // create linked parent for this user
+            await parentApi.linkParentToUser(user.id, {
+              fullName: name,
+              phone: "",
+            });
+          }
         } catch (e) {
-          console.warn("Update parent profile failed", e);
+          console.error("Failed to ensure/update parent profile", e);
+          // Surface a clear toast to the user
+          const msg =
+            e?.response?.data?.message ||
+            e?.message ||
+            "Không thể cập nhật hồ sơ phụ huynh";
+          toast.error(msg);
         }
       } else if (user.role === "driver" && profile && (name || name === "")) {
         try {
-          await updateDriver(profile.id, { driverData: { full_name: name } });
+          await updateDriver(profile.id, { driverData: { fullName: name } });
         } catch (e) {
           console.warn("Update driver profile failed", e);
         }

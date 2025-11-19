@@ -3,12 +3,15 @@
 import React, { useEffect, useState } from "react";
 import apiServices from "../../api/apiServices";
 import AddStudentModal from "../../components/Students/AddStudentModal";
+import EditStudentModal from "../../components/Students/EditStudentModal";
 
 const StudentListPage = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
 
   const fetchStudents = async () => {
     try {
@@ -45,6 +48,26 @@ const StudentListPage = () => {
       console.error("Failed to add student:", err);
       const errorMessage =
         err.response?.data?.message || "Không thể thêm học sinh.";
+      alert("Lỗi: " + errorMessage);
+    }
+  };
+
+  const handleEditClick = (student) => {
+    setEditingStudent(student);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateStudent = async (id, updatedData) => {
+    try {
+      await apiServices.updateStudent(id, updatedData);
+      setIsEditModalOpen(false);
+      setEditingStudent(null);
+      fetchStudents();
+      alert("Cập nhật học sinh thành công!");
+    } catch (err) {
+      console.error("Failed to update student:", err);
+      const errorMessage =
+        err.response?.data?.message || "Không thể cập nhật học sinh.";
       alert("Lỗi: " + errorMessage);
     }
   };
@@ -97,6 +120,16 @@ const StudentListPage = () => {
         onSubmit={handleAddStudent}
       />
 
+      <EditStudentModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingStudent(null);
+        }}
+        student={editingStudent}
+        onSubmit={handleUpdateStudent}
+      />
+
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
@@ -137,7 +170,12 @@ const StudentListPage = () => {
                   {student.PickupLocation ? student.PickupLocation.name : "N/A"}
                 </td>
                 <td style={styles.tdAction}>
-                  <button style={styles.actionButton("edit")}>Sửa</button>
+                  <button
+                    style={styles.actionButton("edit")}
+                    onClick={() => handleEditClick(student)}
+                  >
+                    Sửa
+                  </button>
                   <button style={styles.actionButton("delete")}>Xóa</button>
                 </td>
               </tr>
