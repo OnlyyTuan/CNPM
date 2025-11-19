@@ -4,6 +4,57 @@ const { sequelize, User, Driver } = require("../db"); // Import các models đã
 const config = require("../config/app.config");
 
 const userService = {
+  /**
+   * Tạo User (có thể là parent) và nếu role === 'parent' tạo Parent profile liên kết
+   * @param {{username,password,email,role,parentData?}} userData
+   */
+  async createUser(userData) {
+    const t = await sequelize.transaction();
+    try {
+      const userId = `U${Date.now()}`;
+
+      const hashedPassword = await bcrypt.hash(
+        userData.password,
+        config.SALT_ROUNDS
+      );
+
+      const newUser = await User.create(
+        {
+          id: userId,
+          username: userData.username,
+          password: hashedPassword,
+          email: userData.email || null,
+          role: (userData.role || "parent").toLowerCase(),
+        },
+        { transaction: t }
+      );
+
+      let createdParent = null;
+      if ((userData.role || "").toLowerCase() === "parent") {
+        // tạo Parent profile liên kết
+        const db = require("../db");
+        const Parent = db.Parent;
+        const parentId = `P${Date.now()}`;
+        const p = userData.parentData || userData.parent || {};
+        const parentPayload = {
+          id: parentId,
+          fullName: p.full_name || p.fullName || userData.full_name || "",
+          phone: p.phone || "",
+          address: p.address || "",
+          userId: newUser.id,
+        };
+        createdParent = await Parent.create(parentPayload, { transaction: t });
+      }
+
+      await t.commit();
+
+      // Trả về đối tượng user (nếu có parent, vẫn có thể truy vấn riêng)
+      return newUser;
+    } catch (error) {
+      await t.rollback();
+      throw error;
+    }
+  },
   /** Tạo tài khoản User và hồ sơ Driver trong cùng 1 Transaction */
   async createDriverAndUser(userData, driverData) {
     // Bắt đầu Transaction

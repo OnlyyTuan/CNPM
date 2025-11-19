@@ -136,6 +136,36 @@ const parentService = {
       ],
     });
   },
+  // Cập nhật Parent theo id
+  async updateParent(id, parentData) {
+    const payload = {};
+    if (parentData.full_name || parentData.fullName)
+      payload.fullName = parentData.full_name || parentData.fullName;
+    if (typeof parentData.phone !== "undefined")
+      payload.phone = parentData.phone;
+    if (typeof parentData.address !== "undefined")
+      payload.address = parentData.address;
+
+    const [affected] = await Parent.update(payload, { where: { id } });
+    if (affected === 0) return null;
+    return Parent.findByPk(id, {
+      attributes: ["id", "fullName", "phone", "address", "userId"],
+    });
+  },
+  // Tạo Parent liên kết với user đã tồn tại
+  async createParentForUser(userId, parentData) {
+    // parentData may contain full_name, phone, address, id
+    const payload = {
+      id: parentData.id || `P${Date.now()}`,
+      fullName: parentData.full_name || parentData.fullName || null,
+      phone: parentData.phone || null,
+      address: parentData.address || null,
+      userId: userId,
+    };
+
+    const newParent = await Parent.create(payload);
+    return newParent;
+  },
 };
 
 module.exports = parentService;
