@@ -1,5 +1,6 @@
 // backend/src/controllers/studentController.js
 const db = require("../database"); // Import database connection
+const { validateStudentLocations, getStopsOnBusRoute } = require("../utils/studentValidation");
 
 const studentController = {
   // [GET] /api/v1/students - Lấy danh sách học sinh
@@ -59,6 +60,23 @@ const studentController = {
         dropoff_location_id,
       } = req.body;
 
+      // Validate pickup/dropoff locations nếu có bus được phân công
+      if (assigned_bus_id && (pickup_location_id || dropoff_location_id)) {
+        const validation = await validateStudentLocations(
+          assigned_bus_id,
+          pickup_location_id,
+          dropoff_location_id
+        );
+
+        if (!validation.valid) {
+          return res.status(400).json({
+            success: false,
+            message: 'Dữ liệu không hợp lệ',
+            errors: validation.errors,
+          });
+        }
+      }
+
       // Nếu không có parent_id, dùng DEFAULT_PARENT
       const finalParentId = parent_id || "DEFAULT_PARENT";
 
@@ -113,6 +131,23 @@ const studentController = {
         pickup_location_id,
         dropoff_location_id,
       } = req.body;
+
+      // Validate pickup/dropoff locations nếu có bus được phân công
+      if (assigned_bus_id && (pickup_location_id || dropoff_location_id)) {
+        const validation = await validateStudentLocations(
+          assigned_bus_id,
+          pickup_location_id,
+          dropoff_location_id
+        );
+
+        if (!validation.valid) {
+          return res.status(400).json({
+            success: false,
+            message: 'Dữ liệu không hợp lệ',
+            errors: validation.errors,
+          });
+        }
+      }
 
       // Xây dựng câu lệnh UPDATE động chỉ với các field được cung cấp
       const updateFields = [];
@@ -217,6 +252,26 @@ const studentController = {
       res.status(500).json({
         success: false,
         message: "Lỗi khi xóa học sinh.",
+        error: error.message,
+      });
+    }
+  },
+
+  // [GET] /api/v1/students/bus/:busId/stops - Lấy danh sách stops trên tuyến của xe bus
+  async getStopsForBus(req, res) {
+    try {
+      const { busId } = req.params;
+      const stops = await getStopsOnBusRoute(busId);
+
+      res.json({
+        success: true,
+        data: stops,
+      });
+    } catch (error) {
+      console.error("Lỗi khi lấy stops:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi khi lấy danh sách stops.",
         error: error.message,
       });
     }
