@@ -3,9 +3,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Edit, Trash2, GitBranch, MapPin } from "lucide-react";
+import { Search, Plus, Edit, Trash2, GitBranch, MapPin, X } from "lucide-react";
 import toast from "react-hot-toast";
-import { getAllRoutes } from "../../api/routeApi";
+import { getAllRoutes, getRouteWaypoints } from "../../api/routeApi";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../config/api.config";
 
@@ -14,6 +14,10 @@ const RoutesPage = () => {
   const [filteredRoutes, setFilteredRoutes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showWaypointsModal, setShowWaypointsModal] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState(null);
+  const [waypoints, setWaypoints] = useState([]);
+  const [loadingWaypoints, setLoadingWaypoints] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -114,12 +118,34 @@ const RoutesPage = () => {
     ];
   });
 
-  // Handlers: Edit / Delete
+  // Handlers: Edit / Delete / View Waypoints
   const handleEdit = (displayId) => {
     if (!displayId) return;
     const baseId = String(displayId).split("-")[0];
     // navigate to edit page (adjust path if your app uses a different route)
     navigate(`/admin/routes/edit/${baseId}`);
+  };
+
+  const handleViewWaypoints = async (displayId) => {
+    if (!displayId) return;
+    const baseId = String(displayId).split("-")[0];
+    const route = routes.find((r) => String(r.id) === String(baseId));
+    if (!route) return;
+
+    setSelectedRoute(route);
+    setShowWaypointsModal(true);
+    setLoadingWaypoints(true);
+    
+    try {
+      const data = await getRouteWaypoints(baseId);
+      setWaypoints(data.waypoints || []);
+    } catch (err) {
+      console.error('Lỗi khi tải waypoints:', err);
+      toast.error('Không thể tải danh sách điểm dừng');
+      setWaypoints([]);
+    } finally {
+      setLoadingWaypoints(false);
+    }
   };
 
   const handleDelete = async (displayId) => {
@@ -274,6 +300,13 @@ const RoutesPage = () => {
 
               <div className="mt-6 flex space-x-2">
                 <button
+                  onClick={() => handleViewWaypoints(route.id)}
+                  className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  <MapPin size={16} />
+                  <span>Xem điểm</span>
+                </button>
+                <button
                   onClick={() => handleEdit(route.id)}
                   className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                 >
@@ -297,6 +330,77 @@ const RoutesPage = () => {
         <div className="text-center py-12 bg-white rounded-xl shadow-md">
           <GitBranch size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-500">Không tìm thấy tuyến đường nào</p>
+        </div>
+      )}
+
+      {/* Waypoints Modal */}
+      {showWaypointsModal && selectedRoute && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {selectedRoute.route_name || selectedRoute.name}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Danh sách điểm dừng và waypoints
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWaypointsModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+              {loadingWaypoints ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              ) : waypoints.length === 0 ? (
+                <p className="text-center text-gray-500 py-12">
+                  Chưa có điểm dừng nào
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {waypoints.map((wp, index) => (
+                    <div
+                      key={wp.id || index}
+                      className={`p-4 rounded-lg border-2 ${
+                        wp.is_stop
+                          ? 'bg-green-50 border-green-200'
+                          : 'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-lg font-bold text-gray-700">
+                              #{wp.sequence_order}
+                            </span>
+                            {wp.is_stop && (
+                              <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded-full">
+                                🚏 ĐIỂM DỪNG
+                              </span>
+                            )}
+                          </div>
+                          <p className="font-semibold text-gray-900">
+                            {wp.stop_name || wp.name || 'Điểm trung gian'}
+                          </p>
+                          <div className="mt-2 text-sm text-gray-600 space-y-1">
+                            <p>📍 Lat: {Number(wp.latitude).toFixed(6)}</p>
+                            <p>📍 Lng: {Number(wp.longitude).toFixed(6)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>
