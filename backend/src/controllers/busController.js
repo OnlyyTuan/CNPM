@@ -240,7 +240,7 @@ const busController = {
 
       // Query trực tiếp từ DB, tắt cache của Sequelize
       const buses = await Bus.findAll({
-        attributes: ["id", "license_plate", "speed", "current_location_id"],
+        attributes: ["id", "license_plate", "speed", "current_location_id", "route_id"],
         include: [
           {
             model: Location,
@@ -263,6 +263,7 @@ const busController = {
         speed: b.speed ? Number(b.speed) : null,
         lat: b.CurrentLocation ? Number(b.CurrentLocation.latitude) : null,
         lng: b.CurrentLocation ? Number(b.CurrentLocation.longitude) : null,
+        route_id: b.route_id, // Thêm route_id để frontend vẽ tuyến đường
       }));
 
       console.log(
