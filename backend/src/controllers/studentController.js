@@ -1,12 +1,11 @@
 // backend/src/controllers/studentController.js
-const db = require("../database"); // Import database connection
-const { validateStudentLocations, getStopsOnBusRoute } = require("../utils/studentValidation");
+const db = require('../database'); // Import database connection
 
 const studentController = {
-  // [GET] /api/v1/students - Lấy danh sách học sinh
-  async findAll(req, res) {
-    try {
-      const [students] = await db.query(`
+    // [GET] /api/v1/students - Lấy danh sách học sinh
+    async findAll(req, res) {
+        try {
+            const [students] = await db.query(`
                 SELECT 
                     s.*,
                     b.id as bus_id,
@@ -28,254 +27,156 @@ const studentController = {
                 LEFT JOIN parent p ON s.parent_id = p.id
                 ORDER BY s.full_name ASC
             `);
-
-      res.json({
-        success: true,
-        data: students,
-      });
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách học sinh:", error);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi khi lấy danh sách học sinh.",
-        error: error.message,
-      });
-    }
-  },
-
-  // [POST] /api/v1/students - Thêm học sinh mới
-  async create(req, res) {
-    try {
-      const {
-        id,
-        full_name,
-        class: studentClass,
-        grade,
-        parent_contact,
-        address,
-        status,
-        parent_id,
-        assigned_bus_id,
-        pickup_location_id,
-        dropoff_location_id,
-      } = req.body;
-
-      // Validate pickup/dropoff locations nếu có bus được phân công
-      if (assigned_bus_id && (pickup_location_id || dropoff_location_id)) {
-        const validation = await validateStudentLocations(
-          assigned_bus_id,
-          pickup_location_id,
-          dropoff_location_id
-        );
-
-        if (!validation.valid) {
-          return res.status(400).json({
-            success: false,
-            message: 'Dữ liệu không hợp lệ',
-            errors: validation.errors,
-          });
+            
+            res.json({
+                success: true,
+                data: students
+            });
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách học sinh:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Lỗi khi lấy danh sách học sinh.", 
+                error: error.message 
+            });
         }
-      }
+    },
 
-      // Nếu không có parent_id, dùng DEFAULT_PARENT
-      const finalParentId = parent_id || "DEFAULT_PARENT";
-
-      // Chỉ insert các field được cung cấp
-      await db.query(
-        `
-                        INSERT INTO student (id, full_name, class, grade, parent_contact, address, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `,
-        [
-          id,
-          full_name,
-          studentClass || null,
-          grade || null,
-          parent_contact || null,
-          address || null,
-          status || "WAITING",
-          finalParentId,
-          assigned_bus_id || null,
-          pickup_location_id || null,
-          dropoff_location_id || null,
-        ]
-      );
-
-      res.status(201).json({
-        success: true,
-        message: "Tạo học sinh mới thành công",
-      });
-    } catch (error) {
-      console.error("Lỗi khi tạo học sinh:", error);
-      res.status(400).json({
-        success: false,
-        message: "Lỗi khi tạo học sinh mới.",
-        error: error.message,
-      });
-    }
-  },
-
-  // [PUT] /api/v1/students/:id - Cập nhật thông tin học sinh
-  async update(req, res) {
-    try {
-      const { id } = req.params;
-      const {
-        full_name,
-        class: studentClass,
-        grade,
-        parent_contact,
-        address,
-        status,
-        parent_id,
-        assigned_bus_id,
-        pickup_location_id,
-        dropoff_location_id,
-      } = req.body;
-
-      // Validate pickup/dropoff locations nếu có bus được phân công
-      if (assigned_bus_id && (pickup_location_id || dropoff_location_id)) {
-        const validation = await validateStudentLocations(
-          assigned_bus_id,
-          pickup_location_id,
-          dropoff_location_id
-        );
-
-        if (!validation.valid) {
-          return res.status(400).json({
-            success: false,
-            message: 'Dữ liệu không hợp lệ',
-            errors: validation.errors,
-          });
+    // [POST] /api/v1/students - Thêm học sinh mới
+    async create(req, res) {
+        try {
+            const { id, full_name, class: studentClass, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id } = req.body;
+            
+            // Validate required fields
+            if (!id || !full_name || !studentClass || !grade || !parent_contact) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Thiếu thông tin bắt buộc: id, full_name, class, grade, parent_contact'
+                });
+            }
+            
+            // Validate student ID format
+            if (!/^S[0-9]{3,}$/.test(id)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Mã học sinh phải có định dạng S001, S002...'
+                });
+            }
+            
+            // Convert empty strings to null for optional fields
+            const processedData = {
+                id,
+                full_name,
+                class: studentClass,
+                grade,
+                parent_contact,
+                status: status || 'WAITING',
+                parent_id: (parent_id && parent_id.trim()) ? parent_id : null,
+                assigned_bus_id: (assigned_bus_id && assigned_bus_id.trim()) ? assigned_bus_id : null,
+                pickup_location_id: (pickup_location_id && pickup_location_id.trim()) ? pickup_location_id : null,
+                dropoff_location_id: (dropoff_location_id && dropoff_location_id.trim()) ? dropoff_location_id : null
+            };
+            
+            await db.query(`
+                INSERT INTO student (id, full_name, class, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+                processedData.id,
+                processedData.full_name,
+                processedData.class,
+                processedData.grade,
+                processedData.parent_contact,
+                processedData.status,
+                processedData.parent_id,
+                processedData.assigned_bus_id,
+                processedData.pickup_location_id,
+                processedData.dropoff_location_id
+            ]);
+            
+            res.status(201).json({
+                success: true,
+                message: 'Tạo học sinh mới thành công'
+            });
+        } catch (error) {
+            console.error('Lỗi khi tạo học sinh:', error);
+            
+            // Handle duplicate key error
+            if (error.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Mã học sinh đã tồn tại'
+                });
+            }
+            
+            res.status(400).json({ 
+                success: false,
+                message: "Lỗi khi tạo học sinh mới.", 
+                error: error.message 
+            });
         }
-      }
+    },
 
-      // Xây dựng câu lệnh UPDATE động chỉ với các field được cung cấp
-      const updateFields = [];
-      const updateValues = [];
+    // [PUT] /api/v1/students/:id - Cập nhật thông tin học sinh
+    async update(req, res) {
+        try {
+            const { id } = req.params;
+            const { full_name, class: studentClass, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id } = req.body;
+            
+            const [result] = await db.query(`
+                UPDATE student 
+                SET full_name = ?, class = ?, grade = ?, parent_contact = ?, status = ?, 
+                    parent_id = ?, assigned_bus_id = ?, pickup_location_id = ?, dropoff_location_id = ?
+                WHERE id = ?
+            `, [full_name, studentClass, grade, parent_contact, status, parent_id, assigned_bus_id, pickup_location_id, dropoff_location_id, id]);
+            
+            if (result.affectedRows > 0) {
+                res.json({
+                    success: true,
+                    message: 'Cập nhật học sinh thành công'
+                });
+            } else {
+                res.status(404).json({ 
+                    success: false,
+                    message: "Không tìm thấy học sinh." 
+                });
+            }
+        } catch (error) {
+            console.error('Lỗi khi cập nhật học sinh:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Lỗi khi cập nhật học sinh.", 
+                error: error.message 
+            });
+        }
+    },
 
-      if (full_name !== undefined) {
-        updateFields.push("full_name = ?");
-        updateValues.push(full_name);
-      }
-      if (studentClass !== undefined) {
-        updateFields.push("class = ?");
-        updateValues.push(studentClass);
-      }
-      if (grade !== undefined) {
-        updateFields.push("grade = ?");
-        updateValues.push(grade);
-      }
-      if (parent_contact !== undefined) {
-        updateFields.push("parent_contact = ?");
-        updateValues.push(parent_contact);
-      }
-      if (address !== undefined) {
-        updateFields.push("address = ?");
-        updateValues.push(address);
-      }
-      if (status !== undefined) {
-        updateFields.push("status = ?");
-        updateValues.push(status);
-      }
-      if (parent_id !== undefined) {
-        updateFields.push("parent_id = ?");
-        updateValues.push(parent_id);
-      }
-      if (assigned_bus_id !== undefined) {
-        updateFields.push("assigned_bus_id = ?");
-        updateValues.push(assigned_bus_id);
-      }
-      if (pickup_location_id !== undefined) {
-        updateFields.push("pickup_location_id = ?");
-        updateValues.push(pickup_location_id);
-      }
-      if (dropoff_location_id !== undefined) {
-        updateFields.push("dropoff_location_id = ?");
-        updateValues.push(dropoff_location_id);
-      }
-
-      if (updateFields.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Không có dữ liệu để cập nhật",
-        });
-      }
-
-      updateValues.push(id);
-
-      const [result] = await db.query(
-        `UPDATE student SET ${updateFields.join(", ")} WHERE id = ?`,
-        updateValues
-      );
-
-      if (result.affectedRows > 0) {
-        res.json({
-          success: true,
-          message: "Cập nhật học sinh thành công",
-        });
-      } else {
-        res.status(404).json({
-          success: false,
-          message: "Không tìm thấy học sinh.",
-        });
-      }
-    } catch (error) {
-      console.error("Lỗi khi cập nhật học sinh:", error);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi khi cập nhật học sinh.",
-        error: error.message,
-      });
+    // [DELETE] /api/v1/students/:id - Xóa học sinh
+    async delete(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const [result] = await db.query('DELETE FROM student WHERE id = ?', [id]);
+            
+            if (result.affectedRows > 0) {
+                res.json({
+                    success: true,
+                    message: "Xóa học sinh thành công."
+                });
+            } else {
+                res.status(404).json({ 
+                    success: false,
+                    message: "Không tìm thấy học sinh." 
+                });
+            }
+        } catch (error) {
+            console.error('Lỗi khi xóa học sinh:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Lỗi khi xóa học sinh.", 
+                error: error.message 
+            });
+        }
     }
-  },
-
-  // [DELETE] /api/v1/students/:id - Xóa học sinh
-  async delete(req, res) {
-    try {
-      const { id } = req.params;
-
-      const [result] = await db.query("DELETE FROM student WHERE id = ?", [id]);
-
-      if (result.affectedRows > 0) {
-        res.json({
-          success: true,
-          message: "Xóa học sinh thành công.",
-        });
-      } else {
-        res.status(404).json({
-          success: false,
-          message: "Không tìm thấy học sinh.",
-        });
-      }
-    } catch (error) {
-      console.error("Lỗi khi xóa học sinh:", error);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi khi xóa học sinh.",
-        error: error.message,
-      });
-    }
-  },
-
-  // [GET] /api/v1/students/bus/:busId/stops - Lấy danh sách stops trên tuyến của xe bus
-  async getStopsForBus(req, res) {
-    try {
-      const { busId } = req.params;
-      const stops = await getStopsOnBusRoute(busId);
-
-      res.json({
-        success: true,
-        data: stops,
-      });
-    } catch (error) {
-      console.error("Lỗi khi lấy stops:", error);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi khi lấy danh sách stops.",
-        error: error.message,
-      });
-    }
-  },
 };
 
 module.exports = studentController;

@@ -22,7 +22,6 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
 
   const [errors, setErrors] = useState({});
   const [existingStudents, setExistingStudents] = useState([]);
-  const [busStops, setBusStops] = useState([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,35 +61,9 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
     setErrors({});
   }, [student, isOpen]);
 
-  // Load stops when bus is selected
-  useEffect(() => {
-    const loadBusStops = async () => {
-      if (formData.assigned_bus_id) {
-        try {
-          const response = await axios.get(`http://localhost:3000/api/v1/students/bus/${formData.assigned_bus_id}/stops`);
-          if (response.data.success) {
-            setBusStops(response.data.data);
-          }
-        } catch (error) {
-          console.error('Error loading bus stops:', error);
-          setBusStops([]);
-        }
-      } else {
-        setBusStops([]);
-        // Clear location selections when bus is unassigned
-        setFormData(prev => ({
-          ...prev,
-          pickup_location_id: null,
-          dropoff_location_id: null
-        }));
-      }
-    };
-    loadBusStops();
-  }, [formData.assigned_bus_id]);
-
   const fetchExistingStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/students');
+      const response = await axios.get('http://localhost:5000/api/v1/students');
       if (response.data.success) {
         setExistingStudents(response.data.data);
       }
@@ -298,55 +271,6 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
               <p className="text-yellow-500 text-xs mt-1">Lưu ý: Chưa có xe buýt nào trong hệ thống</p>
             )}
           </div>
-
-          {/* Điểm đón và điểm trả */}
-          {formData.assigned_bus_id && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Điểm đón
-                </label>
-                <select
-                  name="pickup_location_id"
-                  value={formData.pickup_location_id || ''}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- Chọn điểm đón --</option>
-                  {busStops.map((stop) => (
-                    <option key={stop.id} value={stop.id}>
-                      {stop.name}
-                    </option>
-                  ))}
-                </select>
-                {busStops.length === 0 && (
-                  <p className="text-yellow-500 text-xs mt-1">Xe buýt này chưa có điểm dừng</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Điểm trả
-                </label>
-                <select
-                  name="dropoff_location_id"
-                  value={formData.dropoff_location_id || ''}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- Chọn điểm trả --</option>
-                  {busStops.map((stop) => (
-                    <option key={stop.id} value={stop.id}>
-                      {stop.name}
-                    </option>
-                  ))}
-                </select>
-                {busStops.length === 0 && (
-                  <p className="text-yellow-500 text-xs mt-1">Xe buýt này chưa có điểm dừng</p>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Trạng thái */}
           <div>

@@ -4,7 +4,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getLiveBusLocations } from '../../api/busApi';
 import { getRouteWaypoints } from '../../api/routeApi';
-import { getLocations } from '../../api/locationApi';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -95,20 +94,6 @@ const LiveLocationPage = () => {
   const [liveLocations, setLiveLocations] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [routes, setRoutes] = useState({}); // {routeId: {waypoints: [...], color: ...}}
-  const [stops, setStops] = useState([]); // Danh sách điểm dừng
-
-  // Load stops (chạy 1 lần khi mount)
-  useEffect(() => {
-    const loadStops = async () => {
-      try {
-        const data = await getLocations();
-        setStops(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.warn('Không tải được danh sách điểm dừng:', err);
-      }
-    };
-    loadStops();
-  }, []);
 
   // Load routes waypoints (chạy 1 lần khi mount)
   useEffect(() => {
@@ -243,37 +228,6 @@ const LiveLocationPage = () => {
                     </Circle>
                   ))}
                 </React.Fragment>
-              );
-            })}
-            
-            {/* Hiển thị tất cả điểm dừng (stops) */}
-            {stops.map((stop) => {
-              const stopIcon = L.divIcon({
-                className: '',
-                html: '<div style="font-size:24px;">🚏</div>',
-                iconSize: [24, 24],
-                iconAnchor: [12, 24],
-                popupAnchor: [0, -24],
-              });
-              
-              return (
-                <Marker
-                  key={stop.id}
-                  position={[stop.latitude, stop.longitude]}
-                  icon={stopIcon}
-                >
-                  <Popup>
-                    <div>
-                      <strong className="text-red-600">{stop.name}</strong>
-                      <br />
-                      <span className="text-sm text-gray-600">{stop.address || 'Không có địa chỉ'}</span>
-                      <br />
-                      Lat: {Number(stop.latitude).toFixed(5)}
-                      <br />
-                      Lng: {Number(stop.longitude).toFixed(5)}
-                    </div>
-                  </Popup>
-                </Marker>
               );
             })}
             

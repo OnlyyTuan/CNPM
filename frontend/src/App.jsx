@@ -25,30 +25,30 @@ function App() {
         toastOptions={{
           duration: 3000,
           style: {
-            background: "#363636",
-            color: "#fff",
+            background: '#363636',
+            color: '#fff',
           },
           success: {
             duration: 3000,
             iconTheme: {
-              primary: "#10B981",
-              secondary: "#fff",
+              primary: '#10B981',
+              secondary: '#fff',
             },
           },
           error: {
             duration: 4000,
             iconTheme: {
-              primary: "#EF4444",
-              secondary: "#fff",
+              primary: '#EF4444',
+              secondary: '#fff',
             },
           },
         }}
       />
-
+      
       <Routes>
         {/* Redirect root to login */}
         <Route path="/" element={<Navigate to="/login/admin" replace />} />
-
+        
         {/* Login Route - Public */}
         <Route path="/login/admin" element={<LoginPage />} />
         {/* <Route path="/login/driver" element={<DriverLoginPage />} /> */}
@@ -64,16 +64,10 @@ function App() {
           <Route path="students" element={<StudentsPage />} />
           <Route path="drivers" element={<DriversPage />} />
           <Route path="buses" element={<BusesPage />} />
-          <Route path="routes">
-            <Route index element={<RoutesPage />} />
-            <Route path="edit/:id" element={<RouteEdit />} />
-          </Route>
-          <Route path="locations" element={<LocationsPage />} />
+          <Route path="routes" element={<RoutesPage />} />
           <Route path="live" element={<LiveLocationPage />} />
           <Route path="schedules" element={<SchedulePage />} />
           <Route path="assignments" element={<AssignmentPage />} />
-          <Route path="accounts" element={<AccountManagement />} />
-          <Route path="parents" element={<ParentManagement />} />
         </Route>
 
         {/* Driver Routes - Protected */}
@@ -100,3 +94,4 @@ function App() {
 }
 
 export default App;
+

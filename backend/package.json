@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "jest"
+    "dev": "nodemon src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -25,7 +24,6 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10",
-    "jest": "^29.6.1"
+    "nodemon": "^3.1.10"
   }
 }

@@ -25,10 +25,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         field: "parent_contact", // Ánh xạ parentContact (JS) -> parent_contact (SQL)
       },
-      address: {
-        type: DataTypes.STRING,
-        field: "address",
-      },
       status: {
         type: DataTypes.ENUM("IN_BUS", "WAITING", "ABSENT"),
         defaultValue: "WAITING",
