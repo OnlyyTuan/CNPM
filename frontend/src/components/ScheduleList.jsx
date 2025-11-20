@@ -7,7 +7,7 @@ function ScheduleList() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/v1/schedules")
+      .get("http://localhost:3000/api/v1/schedules")
       .then((res) => setSchedules(res.data))
       .catch((err) => console.error(err));
   }, []);

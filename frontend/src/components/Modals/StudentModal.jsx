@@ -63,7 +63,7 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
 
   const fetchExistingStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/v1/students');
+      const response = await axios.get('http://localhost:3000/api/v1/students');
       if (response.data.success) {
         setExistingStudents(response.data.data);
       }
