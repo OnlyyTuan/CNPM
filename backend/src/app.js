@@ -25,6 +25,17 @@ app.use(cors());
 app.use(express.json()); // Cho phép phân tích cú pháp JSON
 app.use(express.urlencoded({ extended: true }));
 
+// Bắt lỗi SyntaxError từ express.json (JSON parse errors)
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    console.error("[app] Invalid JSON payload received:", err.message);
+    return res
+      .status(400)
+      .send({ message: "Invalid JSON payload", error: err.message });
+  }
+  next(err);
+});
+
 // Root cho API v1 — trả về JSON đơn giản
 app.get("/api/v1/", (req, res) => {
   res.json({
@@ -83,7 +94,7 @@ app.use((err, req, res, next) => {
   res.status(500).send({ message: "Lỗi server nội bộ!", error: err.message });
 });
 
-const config = require('./config/app.config');
+const config = require("./config/app.config");
 const PORT = config.PORT || 5000;
 
 if (require.main === module) {

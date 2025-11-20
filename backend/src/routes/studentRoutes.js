@@ -7,6 +7,9 @@ const studentController = require('../controllers/studentController');
 // Lấy danh sách học sinh
 router.get('/', studentController.findAll);
 
+// Lấy stops trên tuyến của xe bus (PHẢI TRƯỚC /:id)
+router.get('/bus/:busId/stops', studentController.getStopsForBus);
+
 // Thêm học sinh mới
 router.post('/', studentController.create);
 

@@ -1,32 +1,33 @@
 // frontend/src/pages/Dashboard/Dashboard.jsx
 // Trang Dashboard tổng quan cho Admin
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Bus, 
-  GitBranch, 
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Users,
+  Bus,
+  GitBranch,
   Calendar,
   UserCog,
   TrendingUp,
-  AlertCircle 
-} from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
-} from 'recharts';
-import { getDashboardData } from '../../api/dashboardApi';
-import { getLiveBusLocations } from '../../api/busApi';
-import toast from 'react-hot-toast';
+  AlertCircle,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { getDashboardData } from "../../api/dashboardApi";
+import { getLiveBusLocations } from "../../api/busApi";
+import toast from "react-hot-toast";
 
 // Component Card thống kê
 const StatCard = ({ icon: Icon, title, value, color, trend }) => {
@@ -64,7 +65,7 @@ const Dashboard = () => {
   const [liveLocations, setLiveLocations] = useState([]);
 
   // Màu sắc cho biểu đồ
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
   // Lấy dữ liệu dashboard
   useEffect(() => {
@@ -103,8 +104,8 @@ const Dashboard = () => {
         setDashboardData(response.data);
       }
     } catch (error) {
-      console.error('Lỗi khi tải dữ liệu dashboard:', error);
-      toast.error('Không thể tải dữ liệu dashboard');
+      console.error("Lỗi khi tải dữ liệu dashboard:", error);
+      toast.error("Không thể tải dữ liệu dashboard");
     } finally {
       setLoading(false);
     }
@@ -125,20 +126,36 @@ const Dashboard = () => {
     );
   }
 
-  const { overview, busStatus, studentsByRoute, scheduleStats, recentSchedules, driverStatus } = dashboardData;
+  const {
+    overview,
+    busStatus,
+    studentsByRoute,
+    scheduleStats,
+    recentSchedules,
+    driverStatus,
+  } = dashboardData;
 
   // Chuẩn bị dữ liệu cho biểu đồ xe buýt
-  const busStatusData = busStatus.map(item => ({
-    name: item.status === 'ACTIVE' ? 'Hoạt động' : 
-          item.status === 'MAINTENANCE' ? 'Bảo trì' : 'Không hoạt động',
+  const busStatusData = busStatus.map((item) => ({
+    name:
+      item.status === "ACTIVE"
+        ? "Hoạt động"
+        : item.status === "MAINTENANCE"
+        ? "Bảo trì"
+        : "Không hoạt động",
     value: item.count,
   }));
 
   // Chuẩn bị dữ liệu cho biểu đồ lịch trình
-  const scheduleStatusData = scheduleStats.map(item => ({
-    name: item.status === 'PLANNED' ? 'Đã lên kế hoạch' :
-          item.status === 'ONGOING' ? 'Đang diễn ra' :
-          item.status === 'COMPLETED' ? 'Hoàn thành' : 'Đã hủy',
+  const scheduleStatusData = scheduleStats.map((item) => ({
+    name:
+      item.status === "PLANNED"
+        ? "Đã lên kế hoạch"
+        : item.status === "ONGOING"
+        ? "Đang diễn ra"
+        : item.status === "COMPLETED"
+        ? "Hoàn thành"
+        : "Đã hủy",
     value: item.count,
   }));
 
@@ -148,9 +165,21 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Tiêu đề */}
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
-        <p className="text-gray-600 mt-1">Tổng quan hệ thống xe buýt học sinh</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
+          <p className="text-gray-600 mt-1">
+            Tổng quan hệ thống xe buýt học sinh
+          </p>
+        </div>
+        <div>
+          <Link
+            to="/admin/accounts"
+            className="inline-block px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+          >
+            Quản lý Tài khoản
+          </Link>
+        </div>
       </div>
 
       {/* Cards thống kê tổng quan */}
@@ -188,7 +217,9 @@ const Dashboard = () => {
           title="Xe đang hoạt động"
           value={overview.activeBuses}
           color="bg-green-600"
-          trend={`${Math.round((overview.activeBuses / overview.totalBuses) * 100)}% tổng số xe`}
+          trend={`${Math.round(
+            (overview.activeBuses / overview.totalBuses) * 100
+          )}% tổng số xe`}
         />
         <StatCard
           icon={Calendar}
@@ -212,13 +243,18 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
                 outerRadius={100}
                 fill="#8884d8"
                 dataKey="value"
               >
                 {busStatusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -246,27 +282,47 @@ const Dashboard = () => {
 
       {/* Theo dõi Xe buýt Trực tiếp */}
       <div className="bg-white rounded-xl shadow-md p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Theo dõi Xe buýt Trực tiếp</h3>
-        {(!liveLocations || liveLocations.length === 0) ? (
-          <p className="text-gray-600">Chưa có dữ liệu vị trí. Hãy chạy xe hoặc cập nhật vị trí qua API.</p>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          Theo dõi Xe buýt Trực tiếp
+        </h3>
+        {!liveLocations || liveLocations.length === 0 ? (
+          <p className="text-gray-600">
+            Chưa có dữ liệu vị trí. Hãy chạy xe hoặc cập nhật vị trí qua API.
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Xe buýt</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vĩ độ (lat)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kinh độ (lng)</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tốc độ (km/h)</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Xe buýt
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vĩ độ (lat)
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Kinh độ (lng)
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tốc độ (km/h)
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {liveLocations.map((bus) => (
                   <tr key={bus.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{bus.licensePlate || bus.id}</td>
-                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">{Number(bus.lat).toFixed(5)}</td>
-                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">{Number(bus.lng).toFixed(5)}</td>
-                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">{bus.speed != null ? Number(bus.speed).toFixed(1) : '-'}</td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {bus.licensePlate || bus.id}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {Number(bus.lat).toFixed(5)}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {Number(bus.lng).toFixed(5)}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                      {bus.speed != null ? Number(bus.speed).toFixed(1) : "-"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -311,21 +367,31 @@ const Dashboard = () => {
                     {schedule.route_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {schedule.driver_name || 'Chưa có'}
+                    {schedule.driver_name || "Chưa có"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {new Date(schedule.start_time).toLocaleString('vi-VN')}
+                    {new Date(schedule.start_time).toLocaleString("vi-VN")}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                      ${schedule.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                        schedule.status === 'ONGOING' ? 'bg-blue-100 text-blue-800' :
-                        schedule.status === 'PLANNED' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'}`}>
-                      {schedule.status === 'COMPLETED' ? 'Hoàn thành' :
-                       schedule.status === 'ONGOING' ? 'Đang diễn ra' :
-                       schedule.status === 'PLANNED' ? 'Đã lên kế hoạch' :
-                       'Đã hủy'}
+                    <span
+                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                      ${
+                        schedule.status === "COMPLETED"
+                          ? "bg-green-100 text-green-800"
+                          : schedule.status === "ONGOING"
+                          ? "bg-blue-100 text-blue-800"
+                          : schedule.status === "PLANNED"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {schedule.status === "COMPLETED"
+                        ? "Hoàn thành"
+                        : schedule.status === "ONGOING"
+                        ? "Đang diễn ra"
+                        : schedule.status === "PLANNED"
+                        ? "Đã lên kế hoạch"
+                        : "Đã hủy"}
                     </span>
                   </td>
                 </tr>

@@ -47,14 +47,17 @@ const AdminLayout = () => {
 
   // Danh sách menu items
   const menuItems = [
-    { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/admin/students', icon: Users, label: 'Học sinh' },
-    { path: '/admin/drivers', icon: UserCog, label: 'Tài xế' },
-    { path: '/admin/buses', icon: Bus, label: 'Xe buýt' },
-    { path: '/admin/live', icon: MapPin, label: 'Vị trí xe' },
-    { path: '/admin/routes', icon: GitBranch, label: 'Tuyến đường' },
-    { path: '/admin/schedules', icon: Calendar, label: 'Lịch trình' },
-    { path: '/admin/assignments', icon: GitBranch, label: 'Phân công' },
+    { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { path: "/admin/accounts", icon: Users, label: "Tài khoản" },
+    { path: "/admin/parents", icon: Users, label: "Phụ huynh" },
+    { path: "/admin/students", icon: Users, label: "Học sinh" },
+    { path: "/admin/drivers", icon: UserCog, label: "Tài xế" },
+    { path: "/admin/buses", icon: Bus, label: "Xe buýt" },
+    { path: "/admin/live", icon: MapPin, label: "Vị trí xe" },
+    { path: "/admin/routes", icon: GitBranch, label: "Tuyến đường" },
+    { path: "/admin/locations", icon: MapPin, label: "Điểm dừng" },
+    { path: "/admin/schedules", icon: Calendar, label: "Lịch trình" },
+    { path: "/admin/assignments", icon: GitBranch, label: "Phân công" },
   ];
 
   // Kiểm tra menu có đang active không
@@ -62,10 +65,11 @@ const AdminLayout = () => {
 
   // Xử lý đăng xuất
   const handleLogout = () => {
-    if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
-      logout(); // Use the logout action from the store
-      toast.success('Đăng xuất thành công');
-      navigate('/login/admin');
+    if (window.confirm("Bạn có chắc muốn đăng xuất?")) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      toast.success("Đăng xuất thành công");
+      navigate("/login/admin");
     }
   };
 
@@ -74,7 +78,7 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? 'w-64' : 'w-20'
+          sidebarOpen ? "w-64" : "w-20"
         } bg-gradient-to-b from-blue-600 to-blue-800 text-white transition-all duration-300 flex flex-col`}
       >
         {/* Logo và Toggle Button */}
@@ -104,10 +108,10 @@ const AdminLayout = () => {
                     to={item.path}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                       isActive(item.path)
-                        ? 'bg-white text-blue-600 shadow-lg'
-                        : 'hover:bg-blue-700 text-white'
+                        ? "bg-white text-blue-600 shadow-lg"
+                        : "hover:bg-blue-700 text-white"
                     }`}
-                    title={!sidebarOpen ? item.label : ''}
+                    title={!sidebarOpen ? item.label : ""}
                   >
                     <Icon size={22} />
                     {sidebarOpen && (

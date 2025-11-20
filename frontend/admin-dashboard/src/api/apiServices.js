@@ -40,14 +40,59 @@ const apiServices = {
     return axiosClient.get("/students");
   },
 
+  createStudent: (studentData) => {
+    // POST /api/v1/students
+    return axiosClient.post("/students", studentData);
+  },
+
+  updateStudent: (id, studentData) => {
+    // PUT /api/v1/students/:id
+    return axiosClient.put(`/students/${id}`, studentData);
+  },
+
+  deleteStudent: (id) => {
+    // DELETE /api/v1/students/:id
+    return axiosClient.delete(`/students/${id}`);
+  },
+
   getAllDrivers: () => {
     // GET /api/v1/drivers (Yêu cầu Token)
     return axiosClient.get("/drivers");
   },
 
+  createDriver: (driverData) => {
+    // POST /api/v1/drivers
+    return axiosClient.post("/drivers", driverData);
+  },
+
+  updateDriver: (id, driverData) => {
+    // PUT /api/v1/drivers/:id
+    return axiosClient.put(`/drivers/${id}`, driverData);
+  },
+
+  deleteDriver: (id) => {
+    // DELETE /api/v1/drivers/:id
+    return axiosClient.delete(`/drivers/${id}`);
+  },
+
   getAllBuses: () => {
     // GET /api/v1/buses (Yêu cầu Token)
     return axiosClient.get("/buses");
+  },
+
+  createBus: (busData) => {
+    // POST /api/v1/buses
+    return axiosClient.post("/buses", busData);
+  },
+
+  updateBus: (id, busData) => {
+    // PUT /api/v1/buses/:id
+    return axiosClient.put(`/buses/${id}`, busData);
+  },
+
+  deleteBus: (id) => {
+    // DELETE /api/v1/buses/:id
+    return axiosClient.delete(`/buses/${id}`);
   },
 
   getSummaryMetrics: () => {
