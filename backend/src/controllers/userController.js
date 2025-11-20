@@ -128,3 +128,32 @@ exports.deleteUser = async (req, res, next) => {
         next(error);
     }
 };
+
+/**
+ * [GET] /api/v1/users/admin - Lấy thông tin admin đầu tiên
+ * Yêu cầu: Authenticated user (parent/driver)
+ */
+exports.getFirstAdmin = async (req, res, next) => {
+    try {
+        const admin = await userService.getFirstAdmin();
+        if (!admin) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng quản trị.' });
+        }
+        res.status(200).json(admin);
+    } catch (error) {
+        next(error);
+    }
+};
+
+/**
+ * [GET] /api/v1/users/chat-users - Lấy danh sách users có thể chat (drivers và parents)
+ * Yêu cầu: Admin
+ */
+exports.getChatUsers = async (req, res, next) => {
+    try {
+        const users = await userService.getChatUsers();
+        res.status(200).json(users);
+    } catch (error) {
+        next(error);
+    }
+};

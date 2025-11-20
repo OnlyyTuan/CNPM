@@ -67,10 +67,15 @@ db.RouteWaypoint = require("./models/RouteWaypoint")(sequelize, Sequelize.DataTy
 db.Bus = require("./models/Bus")(sequelize, Sequelize.DataTypes);
 db.Driver = require("./models/Driver")(sequelize, Sequelize.DataTypes);
 db.Student = require("./models/Student")(sequelize, Sequelize.DataTypes);
+db.Message = require("./models/Message")(sequelize, Sequelize.DataTypes);
 
 // ===================================
 // 3. THIẾT LẬP CÁC QUAN HỆ (ASSOCIATIONS)
 // ===================================
+
+// --- Message Associations ---
+db.Message.belongsTo(db.User, { foreignKey: 'senderId', as: 'Sender' });
+db.Message.belongsTo(db.User, { foreignKey: 'recipientId', as: 'Recipient' });
 
 // --- User & Vai trò (Parent/Driver) ---
 db.User.hasOne(db.Parent, {
@@ -164,15 +169,16 @@ db.RouteWaypoint.belongsTo(db.Route, {
 // 4. HÀM KẾT NỐI VÀ ĐỒNG BỘ DB
 // ===================================
 db.connectDB = async () => {
-    try {
-        await sequelize.authenticate();
-        console.log("✅ Kết nối Database thành công!");
-        await sequelize.sync({ alter: true }); // Điều chỉnh schema hiện tại
-        console.log("✅ Đồng bộ hóa Models/Tables thành công.");
-    } catch (error) {
-        console.error("❌ LỖI Kết nối Database:", error);
-        throw error;
-    }
+  try {
+    await sequelize.authenticate();
+    console.log("✅ Kết nối Database thành công!");
+    
+    await sequelize.sync({ force: false });
+    console.log("✅ Đồng bộ hóa Models/Tables thành công.");
+  } catch (error) {
+    console.error("❌ LỖI Kết nối Database:", error);
+    throw error;
+  }
 };
 
 module.exports = db;

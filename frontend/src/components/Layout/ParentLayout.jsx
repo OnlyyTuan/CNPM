@@ -1,6 +1,3 @@
-// frontend/src/components/Layout/AdminLayout.jsx
-// Layout chính cho Admin với Sidebar navigation
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { 
@@ -17,11 +14,11 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChatIcon from '../Chat/ChatIcon';
-import AdminChatWindow from '../Chat/AdminChatWindow';
+import AdminChatWindow from '../Chat/ParentChat';
 import useAuthStore from '../../hooks/useAuthStore';
 import socketService from '../../api/socketService';
 
-const AdminLayout = () => {
+const ParentLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isChatOpen, setChatOpen] = useState(false);
   const location = useLocation();
@@ -45,27 +42,19 @@ const AdminLayout = () => {
     setChatOpen(!isChatOpen);
   };
 
-  // Danh sách menu items
   const menuItems = [
-    { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/admin/students', icon: Users, label: 'Học sinh' },
-    { path: '/admin/drivers', icon: UserCog, label: 'Tài xế' },
-    { path: '/admin/buses', icon: Bus, label: 'Xe buýt' },
-    { path: '/admin/live', icon: MapPin, label: 'Vị trí xe' },
-    { path: '/admin/routes', icon: GitBranch, label: 'Tuyến đường' },
-    { path: '/admin/schedules', icon: Calendar, label: 'Lịch trình' },
-    { path: '/admin/assignments', icon: GitBranch, label: 'Phân công' },
-  ];
+      { path: '/parent/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
 
-  // Kiểm tra menu có đang active không
-  const isActive = (path) => location.pathname === path;
+    ];
+
+    const isActive = (path) => location.pathname === path;
 
   // Xử lý đăng xuất
   const handleLogout = () => {
     if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
       logout(); // Use the logout action from the store
       toast.success('Đăng xuất thành công');
-      navigate('/login/admin');
+      navigate('/login/parent');
     }
   };
 
@@ -143,12 +132,12 @@ const AdminLayout = () => {
               </h1>
               <div className="flex items-center space-x-4">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-gray-700">Admin</p>
-                  <p className="text-xs text-gray-500">admin@smartbus.com</p>
+                  {/* <p className="text-sm font-medium text-gray-700">Admin</p>
+                  <p className="text-xs text-gray-500">admin@smartbus.com</p> */}
                 </div>
-                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+                {/* <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
                   A
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -165,4 +154,4 @@ const AdminLayout = () => {
   );
 };
 
-export default AdminLayout;
+export default ParentLayout;
