@@ -27,7 +27,11 @@ CREATE TABLE `parent` (
     `address` VARCHAR(255),
     `user_id` VARCHAR(255) NOT NULL UNIQUE,
     PRIMARY KEY (`id`),
+<<<<<<< HEAD
     FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+=======
+    /* foreign key to user will be added in the KHÓA NGOẠI section below */
+>>>>>>> origin/trungkien
 );
 
 -- 3. BẢNG LOCATION
@@ -51,7 +55,11 @@ CREATE TABLE `driver` (
     `user_id` VARCHAR(255) NOT NULL UNIQUE,
     `current_bus_id` VARCHAR(255) UNIQUE,
     PRIMARY KEY (`id`),
+<<<<<<< HEAD
     FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE
+=======
+    /* foreign key to user will be added in the KHÓA NGOẠI section below */
+>>>>>>> origin/trungkien
 );
 
 -- 5. BẢNG BUS
@@ -110,7 +118,10 @@ CREATE TABLE `route_stop` (
     PRIMARY KEY (`route_id`, `location_id`)
 );
 
+<<<<<<< HEAD
 -- 10. BẢNG Schedule_Student
+=======
+>>>>>>> origin/trungkien
 CREATE TABLE `Schedule_Student` (
     `schedule_id` VARCHAR(255) NOT NULL,
     `student_id` VARCHAR(255) NOT NULL,
@@ -119,8 +130,21 @@ CREATE TABLE `Schedule_Student` (
     FOREIGN KEY (`schedule_id`) REFERENCES `Schedule`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`student_id`) REFERENCES `Student`(`id`) ON DELETE CASCADE
 );
+<<<<<<< HEAD
 
 -- 11. BẢNG Message
+=======
+-- 10. BẢNG schedule_student
+CREATE TABLE `schedule_student` (
+    `schedule_id` VARCHAR(255) NOT NULL,
+    `student_id` VARCHAR(255) NOT NULL,
+    `pickup_status` VARCHAR(50),
+    PRIMARY KEY (`schedule_id`, `student_id`),
+    FOREIGN KEY (`schedule_id`) REFERENCES `schedule`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`student_id`) REFERENCES `student`(`id`) ON DELETE CASCADE
+);
+
+>>>>>>> origin/trungkien
 CREATE TABLE `Message` (
     `id` INT AUTO_INCREMENT NOT NULL,
     `sender_type` VARCHAR(50),
@@ -131,8 +155,23 @@ CREATE TABLE `Message` (
     `is_read` BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB;
+<<<<<<< HEAD
 
 -- 12. BẢNG LocationLog
+=======
+-- 11. BẢNG message
+CREATE TABLE `message` (
+    `id` INT AUTO_INCREMENT NOT NULL,
+    `sender_type` VARCHAR(50),
+    `sender_id` VARCHAR(255),
+    `recipient_id` VARCHAR(255) NOT NULL,
+    `message_content` TEXT NOT NULL,
+    `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `is_read` BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+>>>>>>> origin/trungkien
 CREATE TABLE `LocationLog` (
     `id` INT AUTO_INCREMENT NOT NULL,
     `bus_id` VARCHAR(255) NOT NULL,
@@ -143,6 +182,20 @@ CREATE TABLE `LocationLog` (
     PRIMARY KEY (`id`),
     FOREIGN KEY (`bus_id`) REFERENCES `Bus`(`id`) ON DELETE CASCADE
 );
+<<<<<<< HEAD
+=======
+-- 12. BẢNG locationlog
+CREATE TABLE `locationlog` (
+    `id` INT AUTO_INCREMENT NOT NULL,
+    `bus_id` VARCHAR(255) NOT NULL,
+    `timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `latitude` DECIMAL(10, 8),
+    `longitude` DECIMAL(11, 8),
+    `speed` DECIMAL(5, 2),
+    PRIMARY KEY (`id`),
+    FOREIGN KEY (`bus_id`) REFERENCES `bus`(`id`) ON DELETE CASCADE
+);
+>>>>>>> origin/trungkien
 
 -- ===================================
 -- KHÓA NGOẠI
@@ -202,7 +255,30 @@ ALTER TABLE `Message`
 ADD CONSTRAINT `FK_Message_Sender`
   FOREIGN KEY (`sender_id`) REFERENCES `user`(`id`)
   ON DELETE SET NULL ON UPDATE CASCADE;
+<<<<<<< HEAD
 
+=======
+ALTER TABLE `message`
+ADD CONSTRAINT `FK_Message_Recipient`
+    FOREIGN KEY (`recipient_id`) REFERENCES `user`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `message`
+ADD CONSTRAINT `FK_Message_Sender`
+    FOREIGN KEY (`sender_id`) REFERENCES `user`(`id`)
+    ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Thêm khóa ngoại rõ tên cho parent.user_id và driver.user_id
+ALTER TABLE `parent`
+ADD CONSTRAINT `FK_Parent_User`
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `driver`
+ADD CONSTRAINT `FK_Driver_User`
+    FOREIGN KEY (`user_id`) REFERENCES `user`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
+>>>>>>> origin/trungkien
 -- ===================================
 -- DỮ LIỆU MẪU (SAMPLE DATA)
 -- ===================================

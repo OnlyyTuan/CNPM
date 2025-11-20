@@ -26,6 +26,7 @@ const AdminLayout = () => {
   const menuItems = [
     { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { path: "/admin/accounts", icon: Users, label: "Tài khoản" },
+    { path: "/admin/parents", icon: Users, label: "Phụ huynh" },
     { path: "/admin/students", icon: Users, label: "Học sinh" },
     { path: "/admin/drivers", icon: UserCog, label: "Tài xế" },
     { path: "/admin/buses", icon: Bus, label: "Xe buýt" },

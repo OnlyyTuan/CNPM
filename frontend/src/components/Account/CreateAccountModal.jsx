@@ -19,6 +19,7 @@ const CreateAccountModal = ({
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [prefillId, setPrefillId] = useState(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
@@ -28,6 +29,7 @@ const CreateAccountModal = ({
     if (initialData) {
       setRole(initialData.role || defaultRole || "parent");
       setName(initialData.full_name || initialData.fullName || "");
+      setPrefillId(initialData.id || null);
       setPhone(initialData.phone || "");
       setLicenseNumber(
         initialData.license_number || initialData.licenseNumber || ""
@@ -60,6 +62,9 @@ const CreateAccountModal = ({
       password: password || "changeme123",
     };
 
+    // If modal was opened to create from an existing prefill (missing user), preserve the id
+    if (prefillId) userData.id = prefillId;
+
     try {
       if (isEdit && initialData) {
         // Update flows
@@ -72,9 +77,9 @@ const CreateAccountModal = ({
 
         if (role === "driver") {
           const driverData = {
-            full_name: name,
+            fullName: name,
             phone,
-            license_number: licenseNumber,
+            licenseNumber: licenseNumber,
           };
           try {
             await updateDriver(initialData.id, { driverData, userData });
@@ -91,7 +96,7 @@ const CreateAccountModal = ({
           }
         } else {
           const parentData = {
-            full_name: name,
+            fullName: name,
             phone,
           };
           try {
@@ -120,12 +125,19 @@ const CreateAccountModal = ({
       // Creation flows
       if (role === "parent") {
         const parentData = {
-          full_name: name,
+          fullName: name,
           phone,
         };
+        // Ensure we provide IDs expected by backend models (User.id and Parent.id are required)
+        const now = Date.now();
+        const userPayload = { ...userData };
+        if (!userPayload.id) userPayload.id = `U${now}`;
+        const parentPayload = { ...parentData };
+        if (!parentPayload.id) parentPayload.id = `P${now}`;
+
         await parentApi.createParent({
-          userData,
-          parentData,
+          userData: userPayload,
+          parentData: parentPayload,
           studentData: null,
         });
         toast.success("Tạo phụ huynh thành công");
@@ -175,13 +187,16 @@ const CreateAccountModal = ({
 
         const driverData = {
           id: `DRV${Date.now()}`,
-          full_name: name,
+          fullName: name,
           phone,
-          license_number: licenseNumber,
+          licenseNumber: licenseNumber,
         };
 
         try {
-          await createDriver({ userData, driverData });
+          // ensure user id exists for backend user model
+          const userPayload = { ...userData };
+          if (!userPayload.id) userPayload.id = `U${Date.now()}`;
+          await createDriver({ userData: userPayload, driverData });
           toast.success("Tạo tài xế thành công");
           emitEntityChange("driver");
           onCreated && onCreated();

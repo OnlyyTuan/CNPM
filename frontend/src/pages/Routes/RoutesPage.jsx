@@ -3,9 +3,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, Edit, Trash2, GitBranch, MapPin, Navigation, Eye } from "lucide-react";
+import { Search, Plus, Edit, Trash2, GitBranch, MapPin } from "lucide-react";
 import toast from "react-hot-toast";
-import { getAllRoutes, getRouteWaypoints } from "../../api/routeApi";
+import { getAllRoutes } from "../../api/routeApi";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../config/api.config";
 
@@ -14,10 +14,6 @@ const RoutesPage = () => {
   const [filteredRoutes, setFilteredRoutes] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [waypointCounts, setWaypointCounts] = useState({}); // {routeId: count}
-  const [selectedRoute, setSelectedRoute] = useState(null);
-  const [showWaypointsModal, setShowWaypointsModal] = useState(false);
-  const [routeWaypoints, setRouteWaypoints] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,19 +69,6 @@ const RoutesPage = () => {
       } else {
         setRoutes(routesData);
         setFilteredRoutes(routesData);
-        
-        // Load waypoint counts for each route
-        routesData.forEach(async (route) => {
-          try {
-            const waypoints = await getRouteWaypoints(route.id);
-            setWaypointCounts(prev => ({
-              ...prev,
-              [route.id]: Array.isArray(waypoints) ? waypoints.length : 0
-            }));
-          } catch (error) {
-            console.error(`Lỗi tải waypoints cho tuyến ${route.id}:`, error);
-          }
-        });
       }
     } catch (error) {
       console.error("Lỗi khi tải danh sách tuyến đường:", error);
@@ -180,26 +163,6 @@ const RoutesPage = () => {
   const avgDuration =
     totalRoutesCount > 0 ? Math.round(totalDuration / totalRoutesCount) : 0;
 
-  const handleViewWaypoints = async (routeId) => {
-    const baseId = String(routeId).split('-')[0];
-    try {
-      setLoading(true);
-      const data = await getRouteWaypoints(baseId);
-      
-      // Backend trả về: { routeId, routeName, waypoints: [...] }
-      const waypointsList = data.waypoints || data || [];
-      
-      setRouteWaypoints(Array.isArray(waypointsList) ? waypointsList : []);
-      setSelectedRoute(routes.find(r => r.id === baseId));
-      setShowWaypointsModal(true);
-    } catch (error) {
-      console.error('Lỗi khi tải waypoints:', error);
-      toast.error('Không thể tải danh sách điểm dừng');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -212,13 +175,6 @@ const RoutesPage = () => {
             Danh sách tất cả tuyến đường trong hệ thống
           </p>
         </div>
-        <button
-          onClick={() => navigate('/admin/live')}
-          className="flex items-center space-x-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
-        >
-          <Navigation size={20} />
-          <span>Xem vị trí xe</span>
-        </button>
       </div>
 
       {/* Search Bar */}
@@ -314,18 +270,6 @@ const RoutesPage = () => {
                     </strong>
                   </span>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Navigation size={16} className="mr-2 text-gray-400" />
-                  <span>
-                    Điểm dừng:{" "}
-                    <button
-                      onClick={() => handleViewWaypoints(route.id)}
-                      className="font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                    >
-                      {waypointCounts[route.id.split('-')[0]] || '-'} điểm
-                    </button>
-                  </span>
-                </div>
               </div>
 
               <div className="mt-6 flex space-x-2">
@@ -337,18 +281,11 @@ const RoutesPage = () => {
                   <span>Sửa</span>
                 </button>
                 <button
-                  onClick={() => navigate('/admin/live')}
-                  className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
-                  title="Xem vị trí xe trên tuyến này"
-                >
-                  <Eye size={16} />
-                  <span>Xe</span>
-                </button>
-                <button
                   onClick={() => handleDelete(route.id)}
-                  className="flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
                 >
                   <Trash2 size={16} />
+                  <span>Xóa</span>
                 </button>
               </div>
             </div>
@@ -360,85 +297,6 @@ const RoutesPage = () => {
         <div className="text-center py-12 bg-white rounded-xl shadow-md">
           <GitBranch size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-500">Không tìm thấy tuyến đường nào</p>
-        </div>
-      )}
-
-      {/* Waypoints Modal */}
-      {showWaypointsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">
-                    Điểm dừng - {selectedRoute?.route_name || selectedRoute?.name}
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Tổng cộng {routeWaypoints.length} điểm dừng
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowWaypointsModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
-              {routeWaypoints.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <MapPin size={48} className="mx-auto mb-4 text-gray-400" />
-                  <p>Chưa có điểm dừng nào</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {routeWaypoints.map((waypoint, index) => (
-                    <div
-                      key={waypoint.id || index}
-                      className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">
-                          {waypoint.stop_name || waypoint.name || waypoint.location_name || 'Điểm trung gian'}
-                        </h4>
-                        <div className="text-sm text-gray-600 mt-1 space-y-1">
-                          <p className="flex items-center">
-                            <MapPin size={14} className="mr-1" />
-                            Lat: {Number(waypoint.latitude).toFixed(6)}, 
-                            Lng: {Number(waypoint.longitude).toFixed(6)}
-                          </p>
-                          {(waypoint.sequence_order != null || waypoint.sequence != null) && (
-                            <p className="text-xs text-gray-500">
-                              Thứ tự: {waypoint.sequence_order || waypoint.sequence}
-                            </p>
-                          )}
-                          {(waypoint.is_stop === 1 || waypoint.is_stop === true) && (
-                            <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                              🚏 Điểm dừng
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={() => setShowWaypointsModal(false)}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

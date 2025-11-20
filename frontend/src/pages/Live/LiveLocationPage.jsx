@@ -4,8 +4,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getLiveBusLocations } from '../../api/busApi';
 import { getRouteWaypoints } from '../../api/routeApi';
-import axios from 'axios';
-import { API_ENDPOINTS } from '../../config/api.config';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -62,14 +60,13 @@ const FitBoundsOnce = ({ points }) => {
 };
 
 // Component cập nhật marker động - re-mount khi vị trí thay đổi
-const DynamicMarkers = ({ buses, routes }) => {
+const DynamicMarkers = ({ buses }) => {
   return (
     <>
       {buses.map((bus) => {
         // Tạo key duy nhất dựa trên id + tọa độ để force re-render khi vị trí đổi
         const uniqueKey = `${bus.id}-${bus.lat}-${bus.lng}-${bus.speed}`;
-        const routeColor = bus.routeId && routes[bus.routeId] ? routes[bus.routeId].color : '#6b7280';
-        console.log(`🔄 Render marker ${bus.id}: lat=${bus.lat}, lng=${bus.lng}, speed=${bus.speed}, route=${bus.routeId}`);
+        console.log(`🔄 Render marker ${bus.id}: lat=${bus.lat}, lng=${bus.lng}, speed=${bus.speed}`);
         return (
           <Marker 
             key={uniqueKey}
@@ -79,9 +76,6 @@ const DynamicMarkers = ({ buses, routes }) => {
             <Popup>
               <div>
                 <div className="font-semibold">{bus.licensePlate || bus.id}</div>
-                <div style={{color: routeColor, fontWeight: 'bold'}}>
-                  {bus.routeName || (bus.routeId ? `Tuyến ${bus.routeId}` : 'Chưa có tuyến')}
-                </div>
                 <div>Lat: {Number(bus.lat).toFixed(5)}</div>
                 <div>Lng: {Number(bus.lng).toFixed(5)}</div>
                 <div>Tốc độ: {bus.speed != null ? Number(bus.speed).toFixed(1) : '-'} km/h</div>
@@ -100,56 +94,30 @@ const LiveLocationPage = () => {
   const [liveLocations, setLiveLocations] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [routes, setRoutes] = useState({}); // {routeId: {waypoints: [...], color: ...}}
-  const [stops, setStops] = useState([]); // Danh sách điểm dừng từ database
-
-  // Load stops from database
-  useEffect(() => {
-    const loadStops = async () => {
-      try {
-        const response = await axios.get(`${API_ENDPOINTS.ROUTES}/locations`);
-        const stopsData = Array.isArray(response.data) ? response.data : [];
-        console.log('🚏 Loaded stops:', stopsData);
-        setStops(stopsData);
-      } catch (err) {
-        console.error('Lỗi khi load điểm dừng:', err);
-      }
-    };
-    loadStops();
-  }, []);
 
   // Load routes waypoints (chạy 1 lần khi mount)
   useEffect(() => {
     const loadRoutes = async () => {
       try {
-        // Lấy danh sách xe để biết có những route nào đang hoạt động
-        const buses = await getLiveBusLocations();
-        const uniqueRouteIds = [...new Set(buses.filter(b => b.routeId).map(b => b.routeId))];
-        
-        console.log('🚍 Các tuyến đang có xe:', uniqueRouteIds);
-        
-        const routeColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+        // Giả sử bus có route_id, lấy unique route IDs từ bus data
+        // Tạm thời hard-code R001 và R002 để test
+        const routeIds = ['R001', 'R002'];
+        const routeColors = ['#3b82f6', '#10b981']; // xanh dương, xanh lá
         
         const routeData = {};
-        for (let i = 0; i < uniqueRouteIds.length; i++) {
-          const routeId = uniqueRouteIds[i];
+        for (let i = 0; i < routeIds.length; i++) {
+          const routeId = routeIds[i];
           try {
             const data = await getRouteWaypoints(routeId);
-            console.log(`📦 API trả về cho tuyến ${routeId}:`, data);
-            
-            // Backend trả về: { routeId, routeName, waypoints: [...] }
-            const waypointsList = data.waypoints || data || [];
-            
             routeData[routeId] = {
-              waypoints: waypointsList,
-              routeName: data.routeName || routeId,
-              color: routeColors[i % routeColors.length],
+              waypoints: data.waypoints || [],
+              routeName: data.routeName,
+              color: routeColors[i],
             };
-            console.log(`✅ Đã load ${routeData[routeId].waypoints.length} waypoints cho tuyến ${routeId}`);
           } catch (err) {
             console.warn(`Không tải được route ${routeId}:`, err);
           }
         }
-        console.log('🗺️ Tổng hợp routes:', routeData);
         setRoutes(routeData);
       } catch (err) {
         console.error('Lỗi khi load routes:', err);
@@ -223,29 +191,10 @@ const LiveLocationPage = () => {
             {/* VẼ LỘ TRÌNH CHO TỪNG ROUTE */}
             {Object.entries(routes).map(([routeId, routeInfo]) => {
               const { waypoints, color, routeName } = routeInfo;
-              console.log(`🎨 Vẽ tuyến ${routeId}:`, { 
-                color, 
-                routeName, 
-                waypointCount: waypoints?.length,
-                firstWaypoint: waypoints?.[0]
-              });
-              
-              if (!waypoints || waypoints.length === 0) {
-                console.warn(`⚠️ Tuyến ${routeId} không có waypoints`);
-                return null;
-              }
+              if (!waypoints || waypoints.length === 0) return null;
               
               // Tạo array tọa độ cho Polyline
-              const positions = waypoints
-                .filter(wp => wp.latitude != null && wp.longitude != null)
-                .map(wp => [Number(wp.latitude), Number(wp.longitude)]);
-              
-              console.log(`📍 Tuyến ${routeId} có ${positions.length} điểm:`, positions[0], '...', positions[positions.length-1]);
-              
-              if (positions.length < 2) {
-                console.warn(`⚠️ Tuyến ${routeId} không đủ điểm để vẽ polyline`);
-                return null;
-              }
+              const positions = waypoints.map(wp => [wp.latitude, wp.longitude]);
               
               return (
                 <React.Fragment key={routeId}>
@@ -260,10 +209,10 @@ const LiveLocationPage = () => {
                   </Polyline>
                   
                   {/* Điểm dừng (Circle) */}
-                  {waypoints.filter(wp => wp.is_stop || wp.is_stop === 1).map((wp, idx) => (
+                  {waypoints.filter(wp => wp.is_stop).map(wp => (
                     <Circle
-                      key={wp.id || `${routeId}-stop-${idx}`}
-                      center={[Number(wp.latitude), Number(wp.longitude)]}
+                      key={wp.id}
+                      center={[wp.latitude, wp.longitude]}
                       radius={50}
                       pathOptions={{ color: color, fillColor: color, fillOpacity: 0.3 }}
                     >
@@ -282,59 +231,10 @@ const LiveLocationPage = () => {
               );
             })}
             
-            {/* HIỂN THỊ ĐIỂM DỪNG TỪ DATABASE */}
-            {stops.map((stop) => {
-              const lat = Number(stop.latitude);
-              const lng = Number(stop.longitude);
-              if (!lat || !lng) return null;
-              
-              // Icon cho điểm dừng
-              const stopIcon = L.divIcon({
-                className: '',
-                html: `<div style="
-                  width: 24px;
-                  height: 24px;
-                  background: #ef4444;
-                  border: 3px solid white;
-                  border-radius: 50%;
-                  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-size: 14px;
-                  color: white;
-                  font-weight: bold;
-                ">🚏</div>`,
-                iconSize: [24, 24],
-                iconAnchor: [12, 12],
-                popupAnchor: [0, -12]
-              });
-              
-              return (
-                <Marker
-                  key={stop.id}
-                  position={[lat, lng]}
-                  icon={stopIcon}
-                >
-                  <Popup>
-                    <div className="text-sm">
-                      <strong className="text-base">{stop.name}</strong>
-                      <br />
-                      📍 {stop.address}
-                      <br />
-                      <span className="text-gray-500 text-xs">
-                        {lat.toFixed(5)}, {lng.toFixed(5)}
-                      </span>
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-            
             {/* Tự động căn khung lần đầu */}
             <FitBoundsOnce points={liveLocations} />
             {/* Markers cập nhật động */}
-            <DynamicMarkers buses={liveLocations} routes={routes} />
+            <DynamicMarkers buses={liveLocations} />
           </MapContainer>
         </div>
         {(!loading && (!liveLocations || liveLocations.length === 0)) && (

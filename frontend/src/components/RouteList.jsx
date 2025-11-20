@@ -7,7 +7,7 @@ function RouteList() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/api/v1/routes")
+      .get("http://localhost:5000/api/v1/routes")
       .then((res) => setRoutes(res.data))
       .catch((err) => console.error(err));
   }, []);

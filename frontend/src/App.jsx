@@ -10,16 +10,17 @@ import AdminLayout from "./components/Layout/AdminLayout";
 import LoginPage from "./pages/Auth/LoginPage";
 import ProtectedRoute from "./components/Auth/ProtectedRoute";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import AccountManagement from "./pages/Dashboard/AccountManagement";
+import AccountManagement from "./pages/User/AccountManagement";
+import ParentManagement from "./pages/Parents/ParentManagement";
 import SchedulePage from "./pages/Schedules/SchedulePage";
 import AssignmentPage from "./pages/Assignments/AssignmentPage";
 import StudentsPage from "./pages/Students/StudentsPage";
 import DriversPage from "./pages/Drivers/DriversPage";
 import BusesPage from "./pages/Buses/BusesPage";
 import RoutesPage from "./pages/Routes/RoutesPage";
+import LocationsPage from "./pages/Locations/LocationsPage";
 import LiveLocationPage from "./pages/Live/LiveLocationPage";
 import RouteEdit from "./pages/Routes/RouteEdit";
-import LocationsPage from "./pages/Locations/LocationsPage";
 
 function App() {
   return (
@@ -73,11 +74,12 @@ function App() {
             <Route index element={<RoutesPage />} />
             <Route path="edit/:id" element={<RouteEdit />} />
           </Route>
-          <Route path="live" element={<LiveLocationPage />} />
           <Route path="locations" element={<LocationsPage />} />
+          <Route path="live" element={<LiveLocationPage />} />
           <Route path="schedules" element={<SchedulePage />} />
           <Route path="assignments" element={<AssignmentPage />} />
           <Route path="accounts" element={<AccountManagement />} />
+          <Route path="parents" element={<ParentManagement />} />
         </Route>
       </Routes>
     </Router>
