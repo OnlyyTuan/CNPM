@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Test API</title>
+</head>
+<body>
+    <h1>Test API Buses và Locations</h1>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('result');
+            
+            try {
+                // Test API buses
+                console.log('Testing /api/v1/buses...');
+                const busRes = await fetch('http://localhost:3000/api/v1/buses');
+                const busData = await busRes.json();
+                console.log('Buses:', busData);
+                result.innerHTML += `<h2>Buses (${busData.data?.length || 0}):</h2>`;
+                result.innerHTML += `<pre>${JSON.stringify(busData, null, 2)}</pre>`;
+                
+                // Test API locations với bus B001
+                console.log('Testing /api/v1/students/bus/B001/stops...');
+                const locRes = await fetch('http://localhost:3000/api/v1/students/bus/B001/stops');
+                const locData = await locRes.json();
+                console.log('Locations:', locData);
+                result.innerHTML += `<h2>Locations (${locData.data?.length || 0}):</h2>`;
+                result.innerHTML += `<pre>${JSON.stringify(locData, null, 2)}</pre>`;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                result.innerHTML += `<h2 style="color: red;">Error: ${error.message}</h2>`;
+            }
+        }
+        
+        testAPI();
+    </script>
+</body>
+</html>

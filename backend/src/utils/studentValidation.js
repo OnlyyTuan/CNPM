@@ -48,31 +48,21 @@ async function isLocationOnBusRoute(busId, locationId) {
  */
 async function getStopsOnBusRoute(busId) {
   try {
-    const [buses] = await db.query(
-      'SELECT route_id FROM bus WHERE id = ?',
-      [busId]
+    console.log('[DEBUG] getStopsOnBusRoute called with busId:', busId);
+    
+    // Trả về TẤT CẢ locations để người dùng chọn
+    // Backend sẽ validate xem location có nằm trên route hay không khi submit
+    const [locations] = await db.query(
+      `SELECT id, name, address, latitude, longitude 
+       FROM location 
+       ORDER BY name`
     );
 
-    if (buses.length === 0 || !buses[0].route_id) {
-      return [];
-    }
-
-    const routeId = buses[0].route_id;
-
-    // Lấy stops từ route_waypoint và map với location
-    const [stops] = await db.query(
-      `SELECT DISTINCT l.id, l.name, rw.latitude, rw.longitude, rw.stop_name, rw.sequence
-       FROM route_waypoint rw
-       JOIN location l ON rw.latitude = l.latitude AND rw.longitude = l.longitude
-       WHERE rw.route_id = ? 
-       AND rw.is_stop = 1
-       ORDER BY rw.sequence`,
-      [routeId]
-    );
-
-    return stops;
+    console.log('[DEBUG] Found', locations.length, 'locations');
+    
+    return locations;
   } catch (error) {
-    console.error('Error getting stops on route:', error);
+    console.error('Error getting locations:', error);
     return [];
   }
 }

@@ -10,7 +10,60 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     grade: "",
     parent_contact: "",
     address: "",
+    assigned_bus_id: "",
+    pickup_location_id: "",
+    dropoff_location_id: "",
   });
+
+  const [buses, setBuses] = useState([]);
+  const [locations, setLocations] = useState([]);
+
+  // Lấy danh sách xe buýt
+  useEffect(() => {
+    const fetchBuses = async () => {
+      try {
+        console.log('[AddStudentModal] Fetching buses from API...');
+        const response = await fetch("http://localhost:3000/api/v1/buses");
+        const data = await response.json();
+        console.log('[AddStudentModal] Buses response:', data);
+        if (data.success) {
+          setBuses(data.data);
+          console.log('[AddStudentModal] Buses loaded:', data.data.length);
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách xe buýt:", error);
+      }
+    };
+    if (isOpen) {
+      console.log('[AddStudentModal] Modal opened, fetching buses...');
+      fetchBuses();
+    }
+  }, [isOpen]);
+
+  // Lấy danh sách điểm dừng khi chọn xe buýt
+  useEffect(() => {
+    const fetchLocations = async () => {
+      if (!formData.assigned_bus_id) {
+        setLocations([]);
+        return;
+      }
+      try {
+        console.log('[AddStudentModal] Fetching locations for bus:', formData.assigned_bus_id);
+        const response = await fetch(
+          `http://localhost:3000/api/v1/students/bus/${formData.assigned_bus_id}/stops`
+        );
+        const data = await response.json();
+        console.log('[AddStudentModal] Locations response:', data);
+        if (data.success) {
+          setLocations(data.data);
+          console.log('[AddStudentModal] Locations loaded:', data.data.length);
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách điểm dừng:", error);
+      }
+    };
+    fetchLocations();
+  }, [formData.assigned_bus_id]);
 
   // Cập nhật form khi có initialData (chế độ sửa)
   useEffect(() => {
@@ -22,6 +75,9 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         grade: initialData.grade || "",
         parent_contact: initialData.parent_contact || "",
         address: initialData.address || "",
+        assigned_bus_id: initialData.assigned_bus_id || "",
+        pickup_location_id: initialData.pickup_location_id || "",
+        dropoff_location_id: initialData.dropoff_location_id || "",
       });
     } else {
       setFormData({
@@ -31,6 +87,9 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         grade: "",
         parent_contact: "",
         address: "",
+        assigned_bus_id: "",
+        pickup_location_id: "",
+        dropoff_location_id: "",
       });
     }
   }, [initialData, isOpen]);
@@ -69,6 +128,9 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         grade: "",
         parent_contact: "",
         address: "",
+        assigned_bus_id: "",
+        pickup_location_id: "",
+        dropoff_location_id: "",
       });
     }
   };
@@ -150,7 +212,7 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           </div>
 
           <div className="form-group">
-            <label>Địa chỉ (điểm đón)</label>
+            <label>Địa chỉ</label>
             <input
               type="text"
               name="address"
@@ -158,10 +220,64 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               onChange={handleChange}
               placeholder="Ví dụ: Số 1, Đường ABC, Quận X"
             />
-            <small className="text-gray-500">
-              Địa chỉ để xe buýt có thể đến đón
-            </small>
           </div>
+
+          <div className="form-group">
+            <label>Xe buýt</label>
+            <select
+              name="assigned_bus_id"
+              value={formData.assigned_bus_id}
+              onChange={handleChange}
+              className="form-select"
+            >
+              <option value="">-- Chọn xe buýt --</option>
+              {buses.map((bus) => (
+                <option key={bus.id} value={bus.id}>
+                  {bus.id} - {bus.license_plate}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {formData.assigned_bus_id && (
+            <>
+              <div className="form-group">
+                <label>Điểm đón *</label>
+                <select
+                  name="pickup_location_id"
+                  value={formData.pickup_location_id}
+                  onChange={handleChange}
+                  required={!!formData.assigned_bus_id}
+                  className="form-select"
+                >
+                  <option value="">-- Chọn điểm đón --</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Điểm trả *</label>
+                <select
+                  name="dropoff_location_id"
+                  value={formData.dropoff_location_id}
+                  onChange={handleChange}
+                  required={!!formData.assigned_bus_id}
+                  className="form-select"
+                >
+                  <option value="">-- Chọn điểm trả --</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           <div className="modal-footer">
             <button type="button" onClick={onClose} className="btn-cancel">
@@ -222,7 +338,9 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           font-weight: 600;
           color: #343a40;
         }
-        .form-group input {
+        .form-group input,
+        .form-group select,
+        .form-select {
           width: 100%;
           padding: 10px;
           border: 1px solid #ced4da;

@@ -208,10 +208,13 @@ const StudentsPage = () => {
                   Lớp
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Địa chỉ
+                  Xe buýt
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Xe buýt
+                  Điểm đón
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Điểm trả
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
@@ -239,12 +242,17 @@ const StudentsPage = () => {
                     {student.class} - {student.grade}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {student.address || (
+                    {student.assigned_bus_id || (
                       <span className="text-gray-400">Chưa có</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {student.assigned_bus_id || (
+                    {student.pickup_location_name || (
+                      <span className="text-gray-400">Chưa có</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    {student.dropoff_location_name || (
                       <span className="text-gray-400">Chưa có</span>
                     )}
                   </td>
@@ -348,7 +356,23 @@ const StudentsPage = () => {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">
-                  Địa chỉ đón:
+                  Điểm đón:
+                </label>
+                <p className="text-gray-900">
+                  {selectedStudent.pickup_location_name || "Chưa có"}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  Điểm trả:
+                </label>
+                <p className="text-gray-900">
+                  {selectedStudent.dropoff_location_name || "Chưa có"}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  Địa chỉ:
                 </label>
                 <p className="text-gray-900">
                   {selectedStudent.address || "Chưa có"}
