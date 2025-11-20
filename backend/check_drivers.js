@@ -5,7 +5,7 @@ async function checkDrivers() {
     const connection = await mysql.createConnection({
       host: "127.0.0.1",
       user: "root",
-      password: "14092005",
+      password: "thinh2014",
       database: "smartschoolbus",
     });
 
