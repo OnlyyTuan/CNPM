@@ -7,10 +7,12 @@ import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
     { name: 'Dashboard', path: '/', icon: 'FaTachometerAlt' },
-    { name: 'Xe buýt', path: '/buses', icon: 'FaBus' },
-    { name: 'Tài xế', path: '/drivers', icon: 'FaUserTie' },
-    { name: 'Học sinh', path: '/students', icon: 'FaUsers' },
+    { name: 'Xe buýt của tôi', path: '/buses', icon: 'FaBus' },
+    { name: 'Học sinh của tôi', path: '/students', icon: 'FaUsers' },
     { name: 'Tuyến đường', path: '/routes', icon: 'FaMapMarkedAlt' },
+    { name: 'Điểm dừng', path: '/locations', icon: 'FaMapPin' },
+    { name: 'Vị trí xe', path: '/live', icon: 'FaMapMarkerAlt' },
+    { name: 'Lịch trình', path: '/schedules', icon: 'FaCalendarAlt' },
 ];
 
 const Sidebar = () => {

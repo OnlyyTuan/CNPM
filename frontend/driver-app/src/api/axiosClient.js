@@ -1,9 +1,9 @@
-// frontend/admin-dashboard/src/api/axiosClient.js
+// frontend/driver-app/src/api/axiosClient.js
 
 import axios from "axios";
 
 // Định nghĩa base URL của Backend (sử dụng biến môi trường nếu cần)
-const BASE_URL = "http://localhost:5000/api/v1";
+const BASE_URL = "http://localhost:3000/api/v1";
 
 const axiosClient = axios.create({
   baseURL: BASE_URL,

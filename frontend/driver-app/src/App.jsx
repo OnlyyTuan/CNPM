@@ -5,8 +5,12 @@ import LoginPage from './pages/Auth/LoginPage';
 import ProtectedRoute from './pages/Auth/ProtectedRoute';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import BusListPage from './pages/Buses/BusListPage';
-import DriverListPage from './pages/Drivers/DriverListPage';
 import StudentListPage from './pages/Students/StudentListPage';
+import RoutesPage from './pages/Routes/RoutesPage';
+import RouteEdit from './pages/Routes/RouteEdit';
+import LocationsPage from './pages/Locations/LocationsPage';
+import LiveLocationPage from './pages/Live/LiveLocationPage';
+import SchedulePage from './pages/Schedules/SchedulePage';
 
 function App() {
   return (
@@ -19,8 +23,14 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={['driver', 'admin']} />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/buses" element={<BusListPage />} />
-          <Route path="/drivers" element={<DriverListPage />} />
           <Route path="/students" element={<StudentListPage />} />
+          <Route path="/routes">
+            <Route index element={<RoutesPage />} />
+            <Route path="edit/:id" element={<RouteEdit />} />
+          </Route>
+          <Route path="/locations" element={<LocationsPage />} />
+          <Route path="/live" element={<LiveLocationPage />} />
+          <Route path="/schedules" element={<SchedulePage />} />
         </Route>
 
         {/* Redirect mọi route không hợp lệ về trang chủ */}

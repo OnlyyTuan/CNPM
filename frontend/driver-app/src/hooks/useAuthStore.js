@@ -1,4 +1,4 @@
-// frontend/admin-dashboard/src/hooks/useAuthStore.js
+// frontend/driver-app/src/hooks/useAuthStore.js
 
 import { create } from "zustand";
 

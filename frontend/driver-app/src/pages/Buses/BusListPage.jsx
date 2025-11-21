@@ -1,22 +1,21 @@
-// frontend/admin-dashboard/src/pages/Buses/BusListPage.jsx
+// frontend/driver-app/src/pages/Buses/BusListPage.jsx
 
 import React, { useEffect, useState } from "react";
-import apiServices from "../../api/apiServices";
-import AddBusModal from "../../components/Buses/AddBusModal";
+import axiosClient from "../../api/axiosClient";
 
 const BusListPage = () => {
   const [buses, setBuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // Bỏ modal và các chức năng thêm/sửa/xóa cho tài xế
 
   const fetchBuses = async () => {
     try {
       setLoading(true);
-      // Gọi API đã được bảo vệ
-      const response = await apiServices.getAllBuses();
-      // API có thể trả về { data: [...] } hoặc array trực tiếp
-      const busesData = response.data?.data || response.data || [];
+      // Gọi API lấy xe của tài xế hiện tại
+      const response = await axiosClient.get("/drivers/my/buses");
+      // API trả về { success: true, data: [...] }
+      const busesData = response.data?.data || [];
       setBuses(busesData);
       setError(null);
     } catch (err) {
@@ -32,21 +31,6 @@ const BusListPage = () => {
   useEffect(() => {
     fetchBuses();
   }, []);
-
-  const handleAddBus = async (busData) => {
-    try {
-      await apiServices.createBus(busData);
-      setIsModalOpen(false);
-      // Refresh danh sách
-      fetchBuses();
-      alert("Thêm xe buýt thành công!");
-    } catch (err) {
-      console.error("Failed to add bus:", err);
-      const errorMessage =
-        err.response?.data?.message || "Không thể thêm xe buýt.";
-      alert("Lỗi: " + errorMessage);
-    }
-  };
 
   // ------------------------------------------------------------------
   // HIỂN THỊ TRẠNG THÁI
@@ -83,55 +67,47 @@ const BusListPage = () => {
   return (
     <div className="bus-list-container">
       <header style={styles.header}>
-        <h2>Danh sách Xe buýt ({buses.length})</h2>
-        {/* Nút Thêm mới */}
-        <button style={styles.addButton} onClick={() => setIsModalOpen(true)}>
-          + Thêm Xe buýt mới
-        </button>
+        <h2>Xe buýt của tôi ({buses.length})</h2>
       </header>
-      <AddBusModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSubmit={handleAddBus}
-      />{" "}
-      <div style={styles.tableWrapper}>
+      
+      {buses.length === 0 ? (
+        <div style={{ textAlign: 'center', marginTop: '50px', color: '#666' }}>
+          <p>Bạn chưa được gán xe buýt nào. Vui lòng liên hệ quản trị viên.</p>
+        </div>
+      ) : (
+        <div style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
             <tr>
               <th style={styles.th}>Biển số xe</th>
-              <th style={styles.th}>Tài xế</th>
               <th style={styles.th}>Số chỗ</th>
               <th style={styles.th}>Trạng thái</th>
-              <th style={styles.th}>Tuyển đường gán</th>
-              <th style={styles.th}>Tác vụ</th>
+              <th style={styles.th}>Tuyến đường</th>
+              <th style={styles.th}>Vị trí hiện tại</th>
             </tr>
           </thead>
           <tbody>
             {buses.map((bus) => (
               <tr key={bus.id} style={styles.tr}>
                 <td style={styles.td}>{bus.license_plate}</td>
-                {/* Giả định Bus Model được JOIN với Driver và Route */}
+                <td style={styles.td}>{bus.capacity} chỗ</td>
                 <td style={styles.td}>
-                  {bus.Driver ? bus.Driver.fullName : "Chưa gán"}
-                </td>
-                <td style={styles.td}>{bus.capacity}</td>
-                <td style={styles.td}>
-                  <span style={styles.statusBadge(bus.is_running)}>
-                    {bus.is_running ? "Đang chạy" : "Dừng"}
+                  <span style={styles.statusBadge(bus.status === 'ACTIVE')}>
+                    {bus.status === 'ACTIVE' ? 'Hoạt động' : bus.status === 'MAINTENANCE' ? 'Bảo trì' : 'Không hoạt động'}
                   </span>
                 </td>
-                <td style={styles.td}>{bus.Route ? bus.Route.name : "N/A"}</td>
-                <td style={styles.tdAction}>
-                  <button style={styles.actionButton("edit")}>Sửa</button>
-                  <button style={styles.actionButton("detail")}>
-                    Chi tiết
-                  </button>
+                <td style={styles.td}>
+                  {bus.CurrentRoute ? bus.CurrentRoute.route_name : 'Chưa gán tuyến'}
+                </td>
+                <td style={styles.td}>
+                  {bus.CurrentLocation ? bus.CurrentLocation.name : 'Chưa có vị trí'}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 };
