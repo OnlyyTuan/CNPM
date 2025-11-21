@@ -35,7 +35,7 @@ const StudentsPage = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5000/api/v1/students");
+      const response = await axios.get("http://localhost:3000/api/v1/students");
       if (response.data.success) {
         setStudents(response.data.data);
         setFilteredStudents(response.data.data);
@@ -54,7 +54,7 @@ const StudentsPage = () => {
     }
 
     try {
-      await axios.delete(`http://localhost:5000/api/v1/students/${id}`);
+      await axios.delete(`http://localhost:3000/api/v1/students/${id}`);
       toast.success("Xóa học sinh thành công");
       fetchStudents();
     } catch (error) {
@@ -67,7 +67,7 @@ const StudentsPage = () => {
     try {
       console.log("Sending student data:", studentData); // Debug log
       const response = await axios.post(
-        "http://localhost:5000/api/v1/students",
+        "http://localhost:3000/api/v1/students",
         studentData
       );
       console.log("Response:", response.data); // Debug log
@@ -102,7 +102,7 @@ const StudentsPage = () => {
   const handleUpdateStudent = async (studentData) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/v1/students/${selectedStudent.id}`,
+        `http://localhost:3000/api/v1/students/${selectedStudent.id}`,
         studentData
       );
       toast.success("Cập nhật học sinh thành công!");
