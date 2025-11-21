@@ -1,9 +1,9 @@
-// frontend/admin-dashboard/src/components/Auth/ProtectedRoute.jsx
+// frontend/driver-app/src/pages/Auth/ProtectedRoute.jsx
 
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import useAuthStore from '../../hooks/useAuthStore';
-import Layout from '../Layout/Layout'; // Giả định tất cả trang được bảo vệ dùng chung Layout
+import Layout from '../../components/Layout/Layout'; // Path đúng đến components/Layout
 
 /**
  * Component bảo vệ tuyến đường (Route Guard)
