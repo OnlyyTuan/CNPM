@@ -56,7 +56,6 @@ const studentController = {
         class: studentClass,
         grade,
         parent_contact,
-        address,
         status,
         parent_id,
         assigned_bus_id,
@@ -75,7 +74,7 @@ const studentController = {
         if (!validation.valid) {
           return res.status(400).json({
             success: false,
-            message: 'Dữ liệu không hợp lệ',
+            message: "Dữ liệu không hợp lệ",
             errors: validation.errors,
           });
         }
@@ -188,7 +187,6 @@ const studentController = {
         class: studentClass,
         grade,
         parent_contact,
-        address,
         status,
         parent_id,
         assigned_bus_id,
@@ -207,7 +205,7 @@ const studentController = {
         if (!validation.valid) {
           return res.status(400).json({
             success: false,
-            message: 'Dữ liệu không hợp lệ',
+            message: "Dữ liệu không hợp lệ",
             errors: validation.errors,
           });
         }
@@ -233,6 +231,7 @@ const studentController = {
         updateFields.push("parent_contact = ?");
         updateValues.push(parent_contact);
       }
+
       if (status !== undefined) {
         updateFields.push("status = ?");
         updateValues.push(status);
