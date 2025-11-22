@@ -1,10 +1,12 @@
-import axiosClient from "./axiosClient";
+// frontend/src/api/userApi.js
+import axiosClient from './axiosClient';
 
-const userApi = {
-  getAllUsers: () => axiosClient.get("/users"),
-  getUserById: (id) => axiosClient.get(`/users/${id}`),
-  updateUser: (id, data) => axiosClient.put(`/users/${id}`, data),
-  deleteUser: (id) => axiosClient.delete(`/users/${id}`),
+export const getChatUsers = async () => {
+  try {
+    const response = await axiosClient.get('/users/chat-users');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching chat users:', error);
+    throw error;
+  }
 };
-
-export default userApi;

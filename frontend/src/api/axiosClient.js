@@ -1,29 +1,27 @@
 // frontend/src/api/axiosClient.js
-import axios from "axios";
-import { API_BASE_URL } from "../config/api.config";
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api.config';
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Thêm token JWT tự động vào header nếu có
+// Interceptor to add the auth token to every request
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     if (token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers['Authorization'] = `Bearer ${token}`;
     }
+    console.log('Request Config:', config);
     return config;
   },
-  (error) => Promise.reject(error)
-);
-
-// Có thể unwrap response nếu muốn, ở đây trả nguyên response
-axiosClient.interceptors.response.use(
-  (response) => response,
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 export default axiosClient;

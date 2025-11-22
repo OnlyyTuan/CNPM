@@ -1,22 +1,21 @@
 // frontend/src/pages/Assignments/AssignmentPage.jsx
 // Trang phân công tài xế và xe buýt cho tuyến đường
 
-import React, { useState, useEffect } from "react";
-import { Bus, UserCog, GitBranch, Plus, X, Trash2 } from "lucide-react";
-import toast from "react-hot-toast";
+import React, { useState, useEffect } from 'react';
+import { Bus, UserCog, GitBranch, Plus, X, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   getAllAssignments,
   getAvailableForAssignment,
   assignDriverToBus,
   assignBusToRoute,
   unassignDriver,
-} from "../../api/assignmentApi";
-import { getAllDrivers } from "../../api/driverApi";
+} from '../../api/assignmentApi';
 
 // Component Modal phân công tài xế cho xe
 const AssignDriverModal = ({ isOpen, onClose, drivers, buses, onAssign }) => {
-  const [selectedDriver, setSelectedDriver] = useState("");
-  const [selectedBus, setSelectedBus] = useState("");
+  const [selectedDriver, setSelectedDriver] = useState('');
+  const [selectedBus, setSelectedBus] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -31,13 +30,8 @@ const AssignDriverModal = ({ isOpen, onClose, drivers, buses, onAssign }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900">
-            Phân công Tài xế cho Xe
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <h3 className="text-xl font-bold text-gray-900">Phân công Tài xế cho Xe</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X size={24} />
           </button>
         </div>
@@ -103,24 +97,9 @@ const AssignDriverModal = ({ isOpen, onClose, drivers, buses, onAssign }) => {
 };
 
 // Component Modal phân công xe cho tuyến
-const AssignBusToRouteModal = ({
-  isOpen,
-  onClose,
-  buses,
-  routes,
-  onAssign,
-  initialBus,
-  initialRoute,
-}) => {
-  const [selectedBus, setSelectedBus] = useState("");
-  const [selectedRoute, setSelectedRoute] = useState("");
-
-  useEffect(() => {
-    if (isOpen) {
-      if (initialBus) setSelectedBus(initialBus);
-      if (initialRoute) setSelectedRoute(initialRoute);
-    }
-  }, [isOpen, initialBus, initialRoute]);
+const AssignBusToRouteModal = ({ isOpen, onClose, buses, routes, onAssign }) => {
+  const [selectedBus, setSelectedBus] = useState('');
+  const [selectedRoute, setSelectedRoute] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -135,13 +114,8 @@ const AssignBusToRouteModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-900">
-            Phân công Xe cho Tuyến đường
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <h3 className="text-xl font-bold text-gray-900">Phân công Xe cho Tuyến đường</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X size={24} />
           </button>
         </div>
@@ -177,27 +151,11 @@ const AssignBusToRouteModal = ({
               required
             >
               <option value="">-- Chọn tuyến đường --</option>
-              {routes
-                .filter((r) => ["R001", "R002"].includes(String(r.id)))
-                .flatMap((r) => [
-                  {
-                    id: `${r.id}-morning`,
-                    route_name: `${r.route_name} - Sáng`,
-                    distance: r.distance,
-                    estimated_duration: r.estimated_duration,
-                  },
-                  {
-                    id: `${r.id}-evening`,
-                    route_name: `${r.route_name} - Tối`,
-                    distance: r.distance,
-                    estimated_duration: r.estimated_duration,
-                  },
-                ])
-                .map((route) => (
-                  <option key={route.id} value={route.id}>
-                    {route.route_name}
-                  </option>
-                ))}
+              {routes.map((route) => (
+                <option key={route.id} value={route.id}>
+                  {route.route_name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -232,65 +190,9 @@ const AssignmentPage = () => {
   const [loading, setLoading] = useState(true);
   const [driverModalOpen, setDriverModalOpen] = useState(false);
   const [routeModalOpen, setRouteModalOpen] = useState(false);
-  const [initialAssign, setInitialAssign] = useState({ bus: "", route: "" });
 
   useEffect(() => {
     fetchData();
-    const handler = (e) => {
-      const schedule = e.detail;
-      // schedule contains bus_id and route_id (may be empty)
-      const busId = schedule.bus_id || schedule.busId || "";
-      const rawRouteId =
-        schedule.route_id || schedule.routeId || schedule.route || "";
-
-      // Normalize base route id: map '1' -> 'R001', '2' -> 'R002', keep existing 'Rxxx'
-      let baseRouteId = "";
-      if (
-        rawRouteId === null ||
-        rawRouteId === undefined ||
-        rawRouteId === ""
-      ) {
-        baseRouteId = "";
-      } else if (String(rawRouteId).match(/^R/i)) {
-        baseRouteId = String(rawRouteId).toUpperCase();
-      } else if (String(rawRouteId).trim() === "1") {
-        baseRouteId = "R001";
-      } else if (String(rawRouteId).trim() === "2") {
-        baseRouteId = "R002";
-      } else {
-        // fallback: keep as string
-        baseRouteId = String(rawRouteId);
-      }
-
-      // Determine morning/evening variant from schedule start time (if available)
-      const rawStart =
-        schedule.start_time || schedule.startTime || schedule.start || "";
-      let hour = null;
-      if (rawStart) {
-        try {
-          if (typeof rawStart === "number") {
-            hour = new Date(rawStart).getHours();
-          } else if (typeof rawStart === "string" && rawStart.includes(":")) {
-            hour = parseInt(rawStart.split(":")[0], 10);
-          } else {
-            const d = new Date(rawStart);
-            if (!isNaN(d.getTime())) hour = d.getHours();
-          }
-        } catch (err) {
-          hour = null;
-        }
-      }
-
-      const variant =
-        hour !== null ? (hour >= 12 ? "evening" : "morning") : "morning";
-
-      const variantId = baseRouteId ? `${baseRouteId}-${variant}` : "";
-
-      setInitialAssign({ bus: busId, route: variantId });
-      setRouteModalOpen(true);
-    };
-    window.addEventListener("assign:fromSchedule", handler);
-    return () => window.removeEventListener("assign:fromSchedule", handler);
   }, []);
 
   const fetchData = async () => {
@@ -306,66 +208,11 @@ const AssignmentPage = () => {
       }
 
       if (availableRes.success) {
-        // Nếu API không trả routes, hoặc không có tuyến 1/2, dùng fallback để dropdown luôn có dữ liệu
-        const data = availableRes.data || {};
-        // Fallback should use backend route IDs (e.g. R001, R002)
-        const fallbackRoutes = [
-          {
-            id: "R001",
-            route_name: "Tuyến 1: Trung tâm - Quận 9",
-            distance: 15.5,
-            estimated_duration: 45,
-          },
-          {
-            id: "R002",
-            route_name: "Tuyến 2: Bình Thạnh - Thủ Đức",
-            distance: 12.3,
-            estimated_duration: 35,
-          },
-        ];
-        const routesList = Array.isArray(data.routes) ? data.routes : [];
-        // Allowed backend route IDs
-        const allowed = routesList.filter((r) =>
-          ["R001", "R002"].includes(String(r.id))
-        );
-        if (!allowed || allowed.length === 0) {
-          data.routes = fallbackRoutes;
-        }
-        // If availableDrivers is empty, try to fallback to drivers API
-        if (
-          !Array.isArray(data.availableDrivers) ||
-          data.availableDrivers.length === 0
-        ) {
-          try {
-            const driversList = await getAllDrivers();
-            // getAllDrivers may return an array or { data: [...] }
-            const driversArr = Array.isArray(driversList)
-              ? driversList
-              : driversList?.data ?? [];
-            // prefer drivers without a current bus
-            const freeDrivers = driversArr.filter(
-              (d) => !d.currentBusId && !d.current_bus_id && !d.CurrentBus
-            );
-            // Map to expected shape: id, full_name, phone
-            data.availableDrivers = (
-              freeDrivers.length > 0 ? freeDrivers : driversArr
-            ).map((d) => ({
-              id: d.id,
-              full_name:
-                d.fullName || d.full_name || d.full_name || d.full_name,
-              phone: d.phone || "",
-            }));
-          } catch (e) {
-            // ignore and leave availableDrivers empty
-            console.warn("Fallback getAllDrivers failed", e);
-          }
-        }
-
-        setAvailableData(data);
+        setAvailableData(availableRes.data);
       }
     } catch (error) {
-      console.error("Lỗi khi tải dữ liệu:", error);
-      toast.error("Không thể tải dữ liệu");
+      console.error('Lỗi khi tải dữ liệu:', error);
+      toast.error('Không thể tải dữ liệu');
     } finally {
       setLoading(false);
     }
@@ -376,52 +223,46 @@ const AssignmentPage = () => {
     try {
       const response = await assignDriverToBus(driverId, busId);
       if (response.success) {
-        toast.success("Phân công tài xế thành công");
+        toast.success('Phân công tài xế thành công');
         setDriverModalOpen(false);
         fetchData();
       }
     } catch (error) {
-      console.error("Lỗi khi phân công tài xế:", error);
-      toast.error(
-        error.response?.data?.message || "Không thể phân công tài xế"
-      );
+      console.error('Lỗi khi phân công tài xế:', error);
+      toast.error(error.response?.data?.message || 'Không thể phân công tài xế');
     }
   };
 
   // Xử lý phân công xe cho tuyến
   const handleAssignBusToRoute = async (busId, routeId) => {
     try {
-      // Nếu routeId là biến thể dạng '1-morning' hoặc '1-evening', lấy phần id gốc trước khi gọi API
-      const cleanRouteId = String(routeId).split("-")[0];
-      const response = await assignBusToRoute(busId, cleanRouteId);
+      const response = await assignBusToRoute(busId, routeId);
       if (response.success) {
-        toast.success("Phân công xe cho tuyến thành công");
+        toast.success('Phân công xe cho tuyến thành công');
         setRouteModalOpen(false);
         fetchData();
       }
     } catch (error) {
-      console.error("Lỗi khi phân công xe cho tuyến:", error);
-      toast.error(
-        error.response?.data?.message || "Không thể phân công xe cho tuyến"
-      );
+      console.error('Lỗi khi phân công xe cho tuyến:', error);
+      toast.error(error.response?.data?.message || 'Không thể phân công xe cho tuyến');
     }
   };
 
   // Xử lý hủy phân công tài xế
   const handleUnassignDriver = async (driverId) => {
-    if (!window.confirm("Bạn có chắc muốn hủy phân công tài xế này?")) {
+    if (!window.confirm('Bạn có chắc muốn hủy phân công tài xế này?')) {
       return;
     }
 
     try {
       const response = await unassignDriver(driverId);
       if (response.success) {
-        toast.success("Hủy phân công thành công");
+        toast.success('Hủy phân công thành công');
         fetchData();
       }
     } catch (error) {
-      console.error("Lỗi khi hủy phân công:", error);
-      toast.error(error.response?.data?.message || "Không thể hủy phân công");
+      console.error('Lỗi khi hủy phân công:', error);
+      toast.error(error.response?.data?.message || 'Không thể hủy phân công');
     }
   };
 
@@ -437,12 +278,8 @@ const AssignmentPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold text-gray-900">
-          Phân công Tài xế và Xe buýt
-        </h2>
-        <p className="text-gray-600 mt-1">
-          Quản lý phân công tài xế, xe buýt và tuyến đường
-        </p>
+        <h2 className="text-3xl font-bold text-gray-900">Phân công Tài xế và Xe buýt</h2>
+        <p className="text-gray-600 mt-1">Quản lý phân công tài xế, xe buýt và tuyến đường</p>
       </div>
 
       {/* Action Buttons */}
@@ -472,9 +309,7 @@ const AssignmentPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Tài xế chưa phân công</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {availableData.availableDrivers.length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{availableData.availableDrivers.length}</p>
             </div>
           </div>
         </div>
@@ -486,9 +321,7 @@ const AssignmentPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Xe buýt chưa có tài xế</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {availableData.availableBuses.length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{availableData.availableBuses.length}</p>
             </div>
           </div>
         </div>
@@ -500,9 +333,7 @@ const AssignmentPage = () => {
             </div>
             <div>
               <p className="text-sm text-gray-600">Tổng số tuyến đường</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {availableData.routes.length}
-              </p>
+              <p className="text-2xl font-bold text-gray-900">{availableData.routes.length}</p>
             </div>
           </div>
         </div>
@@ -511,9 +342,7 @@ const AssignmentPage = () => {
       {/* Assignments Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">
-            Danh sách Phân công hiện tại
-          </h3>
+          <h3 className="text-lg font-bold text-gray-900">Danh sách Phân công hiện tại</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -557,43 +386,29 @@ const AssignmentPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
-                      {assignment.driver_name || (
-                        <span className="text-gray-400">Chưa có</span>
-                      )}
+                      {assignment.driver_name || <span className="text-gray-400">Chưa có</span>}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {assignment.driver_phone || "-"}
+                    {assignment.driver_phone || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {assignment.route_name || (
-                      <span className="text-gray-400">Chưa có</span>
-                    )}
+                    {assignment.route_name || <span className="text-gray-400">Chưa có</span>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                      ${
-                        assignment.bus_status === "ACTIVE"
-                          ? "bg-green-100 text-green-800"
-                          : assignment.bus_status === "MAINTENANCE"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {assignment.bus_status === "ACTIVE"
-                        ? "Hoạt động"
-                        : assignment.bus_status === "MAINTENANCE"
-                        ? "Bảo trì"
-                        : "Không hoạt động"}
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                      ${assignment.bus_status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                        assignment.bus_status === 'MAINTENANCE' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'}`}>
+                      {assignment.bus_status === 'ACTIVE' ? 'Hoạt động' :
+                       assignment.bus_status === 'MAINTENANCE' ? 'Bảo trì' :
+                       'Không hoạt động'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     {assignment.driver_id && (
                       <button
-                        onClick={() =>
-                          handleUnassignDriver(assignment.driver_id)
-                        }
+                        onClick={() => handleUnassignDriver(assignment.driver_id)}
                         className="text-red-600 hover:text-red-900 flex items-center space-x-1"
                       >
                         <Trash2 size={16} />
@@ -620,17 +435,9 @@ const AssignmentPage = () => {
       <AssignBusToRouteModal
         isOpen={routeModalOpen}
         onClose={() => setRouteModalOpen(false)}
-        buses={assignments
-          .filter((a) => a.driver_id)
-          .map((a) => ({
-            id: a.bus_id,
-            license_plate: a.license_plate,
-            capacity: a.capacity,
-          }))}
+        buses={assignments.filter(a => a.driver_id).map(a => ({ id: a.bus_id, license_plate: a.license_plate, capacity: a.capacity }))}
         routes={availableData.routes}
         onAssign={handleAssignBusToRoute}
-        initialBus={initialAssign.bus}
-        initialRoute={initialAssign.route}
       />
     </div>
   );

@@ -7,10 +7,10 @@ const {
 const userService = require("../services/userService");
 
 const studentController = {
-  // [GET] /api/v1/students - Lấy danh sách học sinh
-  async findAll(req, res) {
-    try {
-      const [students] = await db.query(`
+    // [GET] /api/v1/students - Lấy danh sách học sinh
+    async findAll(req, res) {
+        try {
+            const [students] = await db.query(`
                 SELECT 
                     s.*,
                     b.id as bus_id,
@@ -32,20 +32,20 @@ const studentController = {
                 LEFT JOIN parent p ON s.parent_id = p.id
                 ORDER BY s.full_name ASC
             `);
-
-      res.json({
-        success: true,
-        data: students,
-      });
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách học sinh:", error);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi khi lấy danh sách học sinh.",
-        error: error.message,
-      });
-    }
-  },
+            
+            res.json({
+                success: true,
+                data: students
+            });
+        } catch (error) {
+            console.error('Lỗi khi lấy danh sách học sinh:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Lỗi khi lấy danh sách học sinh.", 
+                error: error.message 
+            });
+        }
+    },
 
   // [POST] /api/v1/students - Thêm học sinh mới
   async create(req, res) {
@@ -289,53 +289,33 @@ const studentController = {
     }
   },
 
-  // [DELETE] /api/v1/students/:id - Xóa học sinh
-  async delete(req, res) {
-    try {
-      const { id } = req.params;
-
-      const [result] = await db.query("DELETE FROM student WHERE id = ?", [id]);
-
-      if (result.affectedRows > 0) {
-        res.json({
-          success: true,
-          message: "Xóa học sinh thành công.",
-        });
-      } else {
-        res.status(404).json({
-          success: false,
-          message: "Không tìm thấy học sinh.",
-        });
-      }
-    } catch (error) {
-      console.error("Lỗi khi xóa học sinh:", error);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi khi xóa học sinh.",
-        error: error.message,
-      });
+    // [DELETE] /api/v1/students/:id - Xóa học sinh
+    async delete(req, res) {
+        try {
+            const { id } = req.params;
+            
+            const [result] = await db.query('DELETE FROM student WHERE id = ?', [id]);
+            
+            if (result.affectedRows > 0) {
+                res.json({
+                    success: true,
+                    message: "Xóa học sinh thành công."
+                });
+            } else {
+                res.status(404).json({ 
+                    success: false,
+                    message: "Không tìm thấy học sinh." 
+                });
+            }
+        } catch (error) {
+            console.error('Lỗi khi xóa học sinh:', error);
+            res.status(500).json({ 
+                success: false,
+                message: "Lỗi khi xóa học sinh.", 
+                error: error.message 
+            });
+        }
     }
-  },
-
-  // [GET] /api/v1/students/bus/:busId/stops - Lấy danh sách stops trên tuyến của xe bus
-  async getStopsForBus(req, res) {
-    try {
-      const { busId } = req.params;
-      const stops = await getStopsOnBusRoute(busId);
-
-      res.json({
-        success: true,
-        data: stops,
-      });
-    } catch (error) {
-      console.error("Lỗi khi lấy stops:", error);
-      res.status(500).json({
-        success: false,
-        message: "Lỗi khi lấy danh sách stops.",
-        error: error.message,
-      });
-    }
-  },
 };
 
 module.exports = studentController;

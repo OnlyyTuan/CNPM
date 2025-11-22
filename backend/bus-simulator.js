@@ -3,7 +3,7 @@
 
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:3000/api/v1';
+const BASE_URL = 'http://localhost:5000/api/v1';
 
 // Waypoints cho từng tuyến (lấy từ database)
 const ROUTE_WAYPOINTS = {

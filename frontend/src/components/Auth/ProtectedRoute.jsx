@@ -4,7 +4,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   // Kiểm tra token trong localStorage
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
@@ -17,10 +17,11 @@ const ProtectedRoute = ({ children }) => {
   try {
     const user = JSON.parse(userStr);
     
-    // Kiểm tra role admin
-    if (user.role !== 'admin') {
-      // Không phải admin -> không cho truy cập
+    // Kiểm tra role
+    if (!allowedRoles.includes(user.role)) {
+      // Role không được phép -> không cho truy cập
       localStorage.clear();
+      // Có thể thêm thông báo lỗi ở đây
       return <Navigate to="/login/admin" replace />;
     }
 

@@ -1,40 +1,60 @@
 // frontend/src/components/Layout/AdminLayout.jsx
 // Layout chính cho Admin với Sidebar navigation
 
-import React, { useState } from "react";
-import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Users,
-  Bus,
-  Calendar,
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Users, 
+  Bus, 
+  Calendar, 
   GitBranch,
   UserCog,
   MapPin,
   Menu,
   X,
-  LogOut,
-} from "lucide-react";
-import toast from "react-hot-toast";
+  LogOut
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import ChatIcon from '../Chat/ChatIcon';
+import AdminChatWindow from '../Chat/AdminChatWindow';
+import useAuthStore from '../../hooks/useAuthStore';
+import socketService from '../../api/socketService';
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isChatOpen, setChatOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  const { isLoggedIn, initializeSocketListeners, logout } = useAuthStore((state) => ({
+    isLoggedIn: state.isLoggedIn,
+    initializeSocketListeners: state.initializeSocketListeners,
+    logout: state.logout,
+  }));
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      console.log('User is logged in, initializing socket...');
+      socketService.initSocket();
+      initializeSocketListeners();
+    }
+  }, [isLoggedIn, initializeSocketListeners]);
+
+  const toggleChat = () => {
+    setChatOpen(!isChatOpen);
+  };
 
   // Danh sách menu items
   const menuItems = [
-    { path: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { path: "/admin/accounts", icon: Users, label: "Tài khoản" },
-    { path: "/admin/parents", icon: Users, label: "Phụ huynh" },
-    { path: "/admin/students", icon: Users, label: "Học sinh" },
-    { path: "/admin/drivers", icon: UserCog, label: "Tài xế" },
-    { path: "/admin/buses", icon: Bus, label: "Xe buýt" },
-    { path: "/admin/live", icon: MapPin, label: "Vị trí xe" },
-    { path: "/admin/routes", icon: GitBranch, label: "Tuyến đường" },
-    { path: "/admin/locations", icon: MapPin, label: "Điểm dừng" },
-    { path: "/admin/schedules", icon: Calendar, label: "Lịch trình" },
-    { path: "/admin/assignments", icon: GitBranch, label: "Phân công" },
+    { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/admin/students', icon: Users, label: 'Học sinh' },
+    { path: '/admin/drivers', icon: UserCog, label: 'Tài xế' },
+    { path: '/admin/buses', icon: Bus, label: 'Xe buýt' },
+    { path: '/admin/live', icon: MapPin, label: 'Vị trí xe' },
+    { path: '/admin/routes', icon: GitBranch, label: 'Tuyến đường' },
+    { path: '/admin/schedules', icon: Calendar, label: 'Lịch trình' },
+    { path: '/admin/assignments', icon: GitBranch, label: 'Phân công' },
   ];
 
   // Kiểm tra menu có đang active không
@@ -42,11 +62,10 @@ const AdminLayout = () => {
 
   // Xử lý đăng xuất
   const handleLogout = () => {
-    if (window.confirm("Bạn có chắc muốn đăng xuất?")) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      toast.success("Đăng xuất thành công");
-      navigate("/login/admin");
+    if (window.confirm('Bạn có chắc muốn đăng xuất?')) {
+      logout(); // Use the logout action from the store
+      toast.success('Đăng xuất thành công');
+      navigate('/login/admin');
     }
   };
 
@@ -55,7 +74,7 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? "w-64" : "w-20"
+          sidebarOpen ? 'w-64' : 'w-20'
         } bg-gradient-to-b from-blue-600 to-blue-800 text-white transition-all duration-300 flex flex-col`}
       >
         {/* Logo và Toggle Button */}
@@ -85,10 +104,10 @@ const AdminLayout = () => {
                     to={item.path}
                     className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                       isActive(item.path)
-                        ? "bg-white text-blue-600 shadow-lg"
-                        : "hover:bg-blue-700 text-white"
+                        ? 'bg-white text-blue-600 shadow-lg'
+                        : 'hover:bg-blue-700 text-white'
                     }`}
-                    title={!sidebarOpen ? item.label : ""}
+                    title={!sidebarOpen ? item.label : ''}
                   >
                     <Icon size={22} />
                     {sidebarOpen && (
@@ -140,6 +159,8 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+      <ChatIcon onClick={toggleChat} />
+      <AdminChatWindow isOpen={isChatOpen} onClose={toggleChat} />
     </div>
   );
 };

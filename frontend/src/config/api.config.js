@@ -1,7 +1,8 @@
 // frontend/src/config/api.config.js
 // Cấu hình API base URL
 
-export const API_BASE_URL = "http://localhost:3000/api/v1";
+export const API_BASE_URL = 'http://localhost:5000/api/v1';
+export const SOCKET_URL = 'http://localhost:5000';
 
 export const API_ENDPOINTS = {
   DASHBOARD: `${API_BASE_URL}/dashboard`,

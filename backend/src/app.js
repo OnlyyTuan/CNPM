@@ -16,6 +16,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
 const routeRoutes = require("./routes/routeRoutes");
 const featureFlagRoutes = require("./routes/featureFlagRoutes");
+const messageRoutes = require("./routes/messageRoutes");
 const userRoutes = require("./routes/userRoutes");
 
 // MIDDLEWARE
@@ -23,17 +24,6 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json()); // Cho phép phân tích cú pháp JSON
 app.use(express.urlencoded({ extended: true }));
-
-// Bắt lỗi SyntaxError từ express.json (JSON parse errors)
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
-    console.error("[app] Invalid JSON payload received:", err.message);
-    return res
-      .status(400)
-      .send({ message: "Invalid JSON payload", error: err.message });
-  }
-  next(err);
-});
 
 // Root cho API v1 — trả về JSON đơn giản
 app.get("/api/v1/", (req, res) => {
@@ -65,7 +55,7 @@ app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/assignments", assignmentRoutes);
 app.use("/api/v1/routes", routeRoutes);
 app.use("/api/v1/feature-flags", featureFlagRoutes);
-// Users (expose basic user management endpoints)
+app.use("/api/v1/messages", messageRoutes);
 app.use("/api/v1/users", userRoutes);
 
 // Health Check Route
@@ -93,7 +83,7 @@ app.use((err, req, res, next) => {
   res.status(500).send({ message: "Lỗi server nội bộ!", error: err.message });
 });
 
-const config = require("./config/app.config");
+const config = require('./config/app.config');
 const PORT = config.PORT || 5000;
 
 if (require.main === module) {
