@@ -74,3 +74,6 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+
+// Alias cho verifyToken
+exports.verifyToken = exports.protect;

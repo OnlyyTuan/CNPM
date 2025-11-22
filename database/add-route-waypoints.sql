@@ -27,7 +27,7 @@ INSERT INTO route_waypoint (id, route_id, sequence, latitude, longitude, stop_na
 ('WP004', 'R001', 3, 10.798000, 106.687000, NULL, FALSE),
 ('WP005', 'R001', 4, 10.790000, 106.680000, 'Đại học Bách Khoa', TRUE),
 ('WP006', 'R001', 5, 10.780000, 106.672000, NULL, FALSE),
--- Điểm đến
+-- Điểm đếnx`
 ('WP007', 'R001', 6, 10.772800, 106.665500, 'Đại học Quốc Gia', TRUE);
 
 -- Thêm dữ liệu cho Route R002 (tuyến khác)
