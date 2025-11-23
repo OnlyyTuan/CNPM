@@ -1,23 +1,23 @@
 // frontend/src/components/Modals/StudentModal.jsx
 // Modal form cho thêm/sửa học sinh
 
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import toast from 'react-hot-toast';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
   const [formData, setFormData] = useState({
-    id: '',
-    full_name: '',
-    class: '',
-    grade: '',
-    parent_contact: '',
+    id: "",
+    full_name: "",
+    class: "",
+    grade: "",
+    parent_contact: "",
     pickup_location_id: null,
     dropoff_location_id: null,
     assigned_bus_id: null,
     parent_id: null,
-    status: 'WAITING'
+    status: "WAITING",
   });
 
   const [errors, setErrors] = useState({});
@@ -29,34 +29,34 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
       // Fetch existing students for duplicate checking
       fetchExistingStudents();
     }
-    
+
     if (student) {
       // Edit mode
       setFormData({
-        id: student.id || '',
-        full_name: student.full_name || '',
-        class: student.class || '',
-        grade: student.grade || '',
-        parent_contact: student.parent_contact || '',
+        id: student.id || "",
+        full_name: student.full_name || "",
+        class: student.class || "",
+        grade: student.grade || "",
+        parent_contact: student.parent_contact || "",
         pickup_location_id: student.pickup_location_id || null,
         dropoff_location_id: student.dropoff_location_id || null,
         assigned_bus_id: student.assigned_bus_id || null,
         parent_id: student.parent_id || null,
-        status: student.status || 'WAITING'
+        status: student.status || "WAITING",
       });
     } else {
       // Add new mode
       setFormData({
-        id: '',
-        full_name: '',
-        class: '',
-        grade: '',
-        parent_contact: '',
+        id: "",
+        full_name: "",
+        class: "",
+        grade: "",
+        parent_contact: "",
         pickup_location_id: null,
         dropoff_location_id: null,
         assigned_bus_id: null,
         parent_id: null,
-        status: 'WAITING'
+        status: "WAITING",
       });
     }
     setErrors({});
@@ -67,21 +67,23 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
     const loadBusStops = async () => {
       if (formData.assigned_bus_id) {
         try {
-          const response = await axios.get(`http://localhost:3000/api/v1/students/bus/${formData.assigned_bus_id}/stops`);
+          const response = await axios.get(
+            `http://localhost:5000/api/v1/students/bus/${formData.assigned_bus_id}/stops`
+          );
           if (response.data.success) {
             setBusStops(response.data.data);
           }
         } catch (error) {
-          console.error('Error loading bus stops:', error);
+          console.error("Error loading bus stops:", error);
           setBusStops([]);
         }
       } else {
         setBusStops([]);
         // Clear location selections when bus is unassigned
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           pickup_location_id: null,
-          dropoff_location_id: null
+          dropoff_location_id: null,
         }));
       }
     };
@@ -90,27 +92,27 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
 
   const fetchExistingStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/v1/students');
+      const response = await axios.get("http://localhost:5000/api/v1/students");
       if (response.data.success) {
         setExistingStudents(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching students:', error);
+      console.error("Error fetching students:", error);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Xóa lỗi khi user nhập
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
@@ -119,29 +121,29 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
     const newErrors = {};
 
     if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Họ tên không được để trống';
+      newErrors.full_name = "Họ tên không được để trống";
     }
 
     if (!formData.class.trim()) {
-      newErrors.class = 'Lớp không được để trống';
+      newErrors.class = "Lớp không được để trống";
     }
 
     if (!formData.grade.trim()) {
-      newErrors.grade = 'Khối không được để trống';
+      newErrors.grade = "Khối không được để trống";
     }
 
     if (!formData.parent_contact.trim()) {
-      newErrors.parent_contact = 'Số điện thoại phụ huynh không được để trống';
+      newErrors.parent_contact = "Số điện thoại phụ huynh không được để trống";
     } else if (!/^[0-9]{10,11}$/.test(formData.parent_contact)) {
-      newErrors.parent_contact = 'Số điện thoại phải là 10-11 chữ số';
+      newErrors.parent_contact = "Số điện thoại phải là 10-11 chữ số";
     }
 
     if (!student && !formData.id.trim()) {
-      newErrors.id = 'Mã học sinh không được để trống';
+      newErrors.id = "Mã học sinh không được để trống";
     } else if (!student && !/^S[0-9]{3,}$/.test(formData.id)) {
-      newErrors.id = 'Mã học sinh phải có định dạng S001, S002...';
-    } else if (!student && existingStudents.some(s => s.id === formData.id)) {
-      newErrors.id = 'Mã học sinh đã tồn tại, vui lòng chọn mã khác';
+      newErrors.id = "Mã học sinh phải có định dạng S001, S002...";
+    } else if (!student && existingStudents.some((s) => s.id === formData.id)) {
+      newErrors.id = "Mã học sinh đã tồn tại, vui lòng chọn mã khác";
     }
 
     setErrors(newErrors);
@@ -150,19 +152,21 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
-      toast.error('Vui lòng kiểm tra lại thông tin');
+      toast.error("Vui lòng kiểm tra lại thông tin");
       return;
     }
 
     try {
       await onSave(formData);
       onClose();
-      toast.success(student ? 'Cập nhật học sinh thành công' : 'Thêm học sinh thành công');
+      toast.success(
+        student ? "Cập nhật học sinh thành công" : "Thêm học sinh thành công"
+      );
     } catch (error) {
-      console.error('Lỗi khi lưu học sinh:', error);
-      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
+      console.error("Lỗi khi lưu học sinh:", error);
+      toast.error(error.response?.data?.message || "Có lỗi xảy ra");
     }
   };
 
@@ -173,10 +177,10 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
       <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-gray-900">
-            {student ? 'Sửa thông tin Học sinh' : 'Thêm Học sinh mới'}
+            {student ? "Sửa thông tin Học sinh" : "Thêm Học sinh mới"}
           </h3>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
             <X size={24} />
@@ -196,9 +200,13 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
                 value={formData.id}
                 onChange={handleChange}
                 placeholder="Ví dụ: S001"
-                className={`w-full px-3 py-2 border ${errors.id ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-3 py-2 border ${
+                  errors.id ? "border-red-500" : "border-gray-300"
+                } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
-              {errors.id && <p className="text-red-500 text-xs mt-1">{errors.id}</p>}
+              {errors.id && (
+                <p className="text-red-500 text-xs mt-1">{errors.id}</p>
+              )}
             </div>
           )}
 
@@ -213,9 +221,13 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
               value={formData.full_name}
               onChange={handleChange}
               placeholder="Nhập họ và tên học sinh"
-              className={`w-full px-3 py-2 border ${errors.full_name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              className={`w-full px-3 py-2 border ${
+                errors.full_name ? "border-red-500" : "border-gray-300"
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
             />
-            {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name}</p>}
+            {errors.full_name && (
+              <p className="text-red-500 text-xs mt-1">{errors.full_name}</p>
+            )}
           </div>
 
           {/* Lớp và Khối */}
@@ -230,9 +242,13 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
                 value={formData.class}
                 onChange={handleChange}
                 placeholder="Ví dụ: 10A1"
-                className={`w-full px-3 py-2 border ${errors.class ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-3 py-2 border ${
+                  errors.class ? "border-red-500" : "border-gray-300"
+                } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
-              {errors.class && <p className="text-red-500 text-xs mt-1">{errors.class}</p>}
+              {errors.class && (
+                <p className="text-red-500 text-xs mt-1">{errors.class}</p>
+              )}
             </div>
 
             <div>
@@ -243,7 +259,9 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
                 name="grade"
                 value={formData.grade}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border ${errors.grade ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                className={`w-full px-3 py-2 border ${
+                  errors.grade ? "border-red-500" : "border-gray-300"
+                } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
               >
                 <option value="">-- Chọn khối --</option>
                 <option value="6">Khối 6</option>
@@ -254,7 +272,9 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
                 <option value="11">Khối 11</option>
                 <option value="12">Khối 12</option>
               </select>
-              {errors.grade && <p className="text-red-500 text-xs mt-1">{errors.grade}</p>}
+              {errors.grade && (
+                <p className="text-red-500 text-xs mt-1">{errors.grade}</p>
+              )}
             </div>
           </div>
 
@@ -269,9 +289,15 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
               value={formData.parent_contact}
               onChange={handleChange}
               placeholder="Ví dụ: 0901234567"
-              className={`w-full px-3 py-2 border ${errors.parent_contact ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              className={`w-full px-3 py-2 border ${
+                errors.parent_contact ? "border-red-500" : "border-gray-300"
+              } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
             />
-            {errors.parent_contact && <p className="text-red-500 text-xs mt-1">{errors.parent_contact}</p>}
+            {errors.parent_contact && (
+              <p className="text-red-500 text-xs mt-1">
+                {errors.parent_contact}
+              </p>
+            )}
           </div>
 
           {/* Xe buýt được phân công */}
@@ -281,21 +307,25 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
             </label>
             <select
               name="assigned_bus_id"
-              value={formData.assigned_bus_id || ''}
+              value={formData.assigned_bus_id || ""}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">-- Chưa phân công --</option>
-              {buses && buses.length > 0 ? buses.map((bus) => (
-                <option key={bus.id} value={bus.id}>
-                  {bus.license_plate} - {bus.capacity} chỗ
-                </option>
-              )) : (
+              {buses && buses.length > 0 ? (
+                buses.map((bus) => (
+                  <option key={bus.id} value={bus.id}>
+                    {bus.license_plate} - {bus.capacity} chỗ
+                  </option>
+                ))
+              ) : (
                 <option disabled>Không có xe buýt nào</option>
               )}
             </select>
             {(!buses || buses.length === 0) && (
-              <p className="text-yellow-500 text-xs mt-1">Lưu ý: Chưa có xe buýt nào trong hệ thống</p>
+              <p className="text-yellow-500 text-xs mt-1">
+                Lưu ý: Chưa có xe buýt nào trong hệ thống
+              </p>
             )}
           </div>
 
@@ -308,7 +338,7 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
                 </label>
                 <select
                   name="pickup_location_id"
-                  value={formData.pickup_location_id || ''}
+                  value={formData.pickup_location_id || ""}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -320,7 +350,9 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
                   ))}
                 </select>
                 {busStops.length === 0 && (
-                  <p className="text-yellow-500 text-xs mt-1">Xe buýt này chưa có điểm dừng</p>
+                  <p className="text-yellow-500 text-xs mt-1">
+                    Xe buýt này chưa có điểm dừng
+                  </p>
                 )}
               </div>
 
@@ -330,7 +362,7 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
                 </label>
                 <select
                   name="dropoff_location_id"
-                  value={formData.dropoff_location_id || ''}
+                  value={formData.dropoff_location_id || ""}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -342,7 +374,9 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
                   ))}
                 </select>
                 {busStops.length === 0 && (
-                  <p className="text-yellow-500 text-xs mt-1">Xe buýt này chưa có điểm dừng</p>
+                  <p className="text-yellow-500 text-xs mt-1">
+                    Xe buýt này chưa có điểm dừng
+                  </p>
                 )}
               </div>
             </div>
@@ -378,7 +412,7 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
               type="submit"
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              {student ? 'Cập nhật' : 'Thêm mới'}
+              {student ? "Cập nhật" : "Thêm mới"}
             </button>
           </div>
         </form>

@@ -11,11 +11,13 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 
 import {
   getAllSchedules,
+  getMySchedules,
   createSchedule,
   updateSchedule,
   deleteSchedule,
 } from "../../api/scheduleApi";
 import { getAllAssignments } from "../../api/assignmentApi";
+import useAuthStore from "../../hooks/useAuthStore";
 
 // Cấu hình localizer cho calendar
 const locales = {
@@ -340,6 +342,7 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm }) => {
 
 const SchedulePage = () => {
   const [schedules, setSchedules] = useState([]);
+  const [allSchedulesCount, setAllSchedulesCount] = useState(null);
   const [buses, setBuses] = useState([]);
   const [routes, setRoutes] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -357,11 +360,13 @@ const SchedulePage = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Lấy schedules
-      const schedulesRes = await getAllSchedules();
-      if (schedulesRes.success) {
-        setSchedules(schedulesRes.data);
-      }
+      // Lấy schedules của tài xế đang đăng nhập từ server
+      const mySchedulesRes = await getMySchedules();
+      const schedulesData =
+        mySchedulesRes && mySchedulesRes.success ? mySchedulesRes.data : [];
+      setAllSchedulesCount(
+        Array.isArray(schedulesData) ? schedulesData.length : 0
+      );
 
       // Lấy buses từ API nếu có
       try {
@@ -399,8 +404,35 @@ const SchedulePage = () => {
             ? assignRes
             : assignRes?.data || assignRes?.data?.data || [];
           if (Array.isArray(assignData)) setAssignments(assignData);
+
+          // Server đã trả lịch cho tài xế (nếu backend chưa hỗ trợ, schedulesData sẽ rỗng)
+          console.debug(
+            "[SchedulePage] fetched my schedules:",
+            schedulesData.length
+          );
+          if (Array.isArray(schedulesData)) setSchedules(schedulesData);
         } catch (err) {
           console.warn("Không thể lấy phân công hiện tại", err);
+          // still attempt to filter using empty assignments
+          try {
+            const authUser = useAuthStore.getState().user;
+            console.debug(
+              "[SchedulePage] authUser (no assignments):",
+              authUser
+            );
+            const filtered = filterSchedulesForDriver(
+              schedulesData,
+              [],
+              authUser
+            );
+            console.debug(
+              "[SchedulePage] filtered schedules (no assignments):",
+              filtered.length
+            );
+            setSchedules(filtered);
+          } catch (e) {
+            setSchedules(schedulesData);
+          }
         }
       } catch (err) {
         console.warn("Lấy routes từ API thất bại, dùng dữ liệu mẫu", err);
@@ -417,6 +449,77 @@ const SchedulePage = () => {
     }
   };
 
+  // Hàm lọc lịch trình chỉ cho tài xế đang đăng nhập
+  const filterSchedulesForDriver = (
+    schedulesArr = [],
+    assignmentsArr = [],
+    authUser,
+    busesArr = []
+  ) => {
+    if (!authUser) return [];
+
+    // Tìm tất cả bus_id được phân công cho driver này
+    const driverId =
+      authUser.id || authUser.driver_id || authUser.driverId || null;
+    const busIds = new Set();
+    assignmentsArr.forEach((a) => {
+      const aDriver =
+        a.driver_id || a.driverId || (a.driver && a.driver.id) || null;
+      const aBus = a.bus_id || a.busId || (a.bus && a.bus.id) || null;
+      if (aDriver && String(aDriver) === String(driverId) && aBus)
+        busIds.add(String(aBus));
+    });
+
+    // Nếu tìm được busIds từ phân công, lọc theo bus_id
+    if (busIds.size > 0) {
+      return schedulesArr.filter((s) => busIds.has(String(s.bus_id)));
+    }
+
+    // Nếu không có phân công nhưng API buses trả về thông tin driver trên bus, lọc theo bus.driver_id
+    if (Array.isArray(busesArr) && busesArr.length > 0) {
+      const busDriverMap = new Map();
+      busesArr.forEach((b) => {
+        if (b && (b.id || b.id === 0))
+          busDriverMap.set(
+            String(b.id),
+            b.driver_id || b.driverId || b.driver || null
+          );
+      });
+      const driverId =
+        authUser.id || authUser.driver_id || authUser.driverId || null;
+      if (driverId) {
+        const filteredByBus = schedulesArr.filter((s) => {
+          const bid = s.bus_id || s.busId || s.bus_id;
+          return (
+            bid && String(busDriverMap.get(String(bid))) === String(driverId)
+          );
+        });
+        if (filteredByBus.length > 0) return filteredByBus;
+      }
+    }
+
+    // Fallback: nếu backend trả về driver_name trong schedule, so sánh với tên người dùng
+    const name = (
+      authUser.full_name ||
+      authUser.fullName ||
+      authUser.name ||
+      ""
+    )
+      .toString()
+      .toLowerCase();
+    if (name) {
+      return schedulesArr.filter((s) => {
+        const dname = (s.driver_name || s.driverName || "")
+          .toString()
+          .toLowerCase();
+        return dname && dname === name;
+      });
+    }
+
+    // Nếu không có thông tin nào để lọc, trả về rỗng (driver không có lịch)
+    return [];
+  };
+
   // Chuyển đổi schedules thành events cho calendar
   const events = schedules.map((schedule) => ({
     id: schedule.id,
@@ -430,6 +533,16 @@ const SchedulePage = () => {
   const handleAddSchedule = () => {
     setSelectedSchedule(null);
     setModalOpen(true);
+  };
+
+  // Xử lý xem chi tiết lịch khi click event
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [viewSchedule, setViewSchedule] = useState(null);
+
+  const handleViewEvent = (event) => {
+    const schedule = event.resource || event;
+    setViewSchedule(schedule);
+    setViewModalOpen(true);
   };
 
   // Xử lý sửa lịch trình
@@ -491,8 +604,78 @@ const SchedulePage = () => {
     return (
       <div className="text-xs">
         <div className="font-semibold">{event.title}</div>
-        <div className="text-gray-500 mt-1">
-          Chỉ xem
+        {schedule.route_name && (
+          <div className="text-gray-600 text-xs">{schedule.route_name}</div>
+        )}
+        {schedule.license_plate && (
+          <div className="text-gray-500 text-xs">{schedule.license_plate}</div>
+        )}
+      </div>
+    );
+  };
+
+  // Modal read-only xem chi tiết lịch trình
+  const ViewScheduleModal = ({ isOpen, onClose, schedule }) => {
+    if (!isOpen || !schedule) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-900">
+              Chi tiết lịch trình
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              Đóng
+            </button>
+          </div>
+
+          <div className="space-y-3 text-sm text-gray-700">
+            <div>
+              <strong>Xe:</strong>{" "}
+              {schedule.license_plate || schedule.bus_id || "Chưa gán"}
+            </div>
+            <div>
+              <strong>Tuyến:</strong>{" "}
+              {schedule.route_name || schedule.route_id || "Chưa gán"}
+            </div>
+            <div>
+              <strong>Thời gian bắt đầu:</strong>{" "}
+              {schedule.start_time
+                ? new Date(schedule.start_time).toLocaleString("vi-VN")
+                : "-"}
+            </div>
+            <div>
+              <strong>Thời gian kết thúc:</strong>{" "}
+              {schedule.end_time
+                ? new Date(schedule.end_time).toLocaleString("vi-VN")
+                : "-"}
+            </div>
+            <div>
+              <strong>Tài xế:</strong> {schedule.driver_name || "-"}{" "}
+              {schedule.driver_phone ? `(${schedule.driver_phone})` : ""}
+            </div>
+            <div>
+              <strong>Trạng thái:</strong> {schedule.status || "-"}
+            </div>
+            {schedule.notes && (
+              <div>
+                <strong>Ghi chú:</strong> {schedule.notes}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              Đóng
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -517,6 +700,10 @@ const SchedulePage = () => {
           <p className="text-gray-600 mt-1">
             Xem lịch trình xe buýt được phân công
           </p>
+          <div className="text-sm text-gray-500 mt-1">
+            Debug: tổng {allSchedulesCount ?? "-"} lịch, phân công{" "}
+            {assignments.length} kết quả, đang hiển thị {schedules.length}
+          </div>
         </div>
       </div>
 
@@ -530,6 +717,7 @@ const SchedulePage = () => {
           events={events}
           startAccessor="start"
           endAccessor="end"
+          onSelectEvent={handleViewEvent}
           culture="vi"
           messages={{
             next: "Sau",
@@ -547,6 +735,73 @@ const SchedulePage = () => {
             event: EventComponent,
           }}
         />
+        {viewModalOpen && viewSchedule && (
+          <ViewScheduleModal
+            isOpen={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            schedule={viewSchedule}
+          />
+        )}
+
+        {/* Fallback UI: if calendar has no events but there are assignments, show details */}
+        {events.length === 0 && assignments && assignments.length > 0 && (
+          <div className="mt-6 p-4 border border-dashed border-gray-200 rounded-lg bg-gray-50">
+            <h4 className="text-lg font-semibold text-gray-800 mb-2">
+              Bạn chưa có lịch chi tiết — phân công hiện tại
+            </h4>
+            <p className="text-sm text-gray-600 mb-3">
+              Quản trị viên đã phân công bạn cho các xe/tuyến dưới đây, nhưng
+              chưa tạo lịch chi tiết. Khi quản trị viên thêm lịch, chúng sẽ xuất
+              hiện trên lịch ở trên.
+            </p>
+            <ul className="space-y-3">
+              {assignments.map((a) => {
+                const license =
+                  a.license_plate ||
+                  a.bus_license ||
+                  (a.bus && a.bus.license_plate) ||
+                  a.bus_id ||
+                  "-";
+                const route =
+                  a.route_name ||
+                  (a.route && a.route.route_name) ||
+                  a.route_id ||
+                  "-";
+                const note = a.notes || a.assignment_note || "";
+                return (
+                  <li
+                    key={a.id || a.bus_id || `${license}-${route}`}
+                    className="p-3 bg-white rounded shadow-sm"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="font-medium text-gray-800">{route}</div>
+                        <div className="text-sm text-gray-600">
+                          Xe: {license}
+                        </div>
+                        {note && (
+                          <div className="text-sm text-gray-500 mt-1">
+                            Ghi chú: {note}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {/* If there is a typical time field, show it */}
+                        {a.start_time || a.time || a.shift ? (
+                          <div>
+                            {(a.start_time || a.time || a.shift).toString()}
+                          </div>
+                        ) : (
+                          <div>Thời gian: (chưa có)</div>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,13 +1,24 @@
 // backend/src/middleware/authMiddleware.js
 
 const { verifyToken } = require("../utils/jwt");
-const { User } = require("../db"); // User Model đã được import
+const db = require("../db"); // Sequelize models container (db.User, db.Driver...)
+const User = db.User;
 
 // ----------------------------------------------------
 // Middleware xác thực JWT Token
 // ----------------------------------------------------
 exports.protect = async (req, res, next) => {
   let token;
+
+  // Debug: log incoming authorization header (temporary)
+  try {
+    console.debug(
+      "[authMiddleware] incoming Authorization header:",
+      req.headers && req.headers.authorization
+    );
+  } catch (e) {
+    // ignore
+  }
 
   // 1. Kiểm tra Token trong Header Authorization: Bearer <token>
   if (
@@ -39,8 +50,30 @@ exports.protect = async (req, res, next) => {
       }
 
       // 4. Gắn User ID và Role vào Request
-      // req.user sẽ chứa { id: 'Uxxx', role: 'admin' }
-      req.user = { id: currentUser.id, role: currentUser.role };
+      // req.user sẽ luôn có `userId` (ID trong bảng user) và `role`.
+      // Nếu là tài xế, tìm record trong bảng `driver` để gán `driverId` (Dxxx)
+      const resultUser = { userId: currentUser.id, role: currentUser.role };
+
+      if (String(currentUser.role).toLowerCase() === "driver") {
+        try {
+          const driver = await db.Driver.findOne({
+            where: { user_id: currentUser.id },
+          });
+          if (driver) {
+            resultUser.driverId = driver.id;
+          }
+        } catch (e) {
+          console.warn(
+            "[authMiddleware] cannot find driver record for user",
+            currentUser.id,
+            e.message
+          );
+        }
+      }
+
+      // Backwards-compatible: keep `id` as userId for other parts of the app
+      resultUser.id = currentUser.id;
+      req.user = resultUser;
 
       next();
     } catch (error) {

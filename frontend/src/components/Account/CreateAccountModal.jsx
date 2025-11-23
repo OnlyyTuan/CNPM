@@ -13,6 +13,10 @@ const CreateAccountModal = ({
   onCreated,
   defaultRole = "parent",
   initialData = null,
+  // If true, hide the role selector (useful when modal is used from a specific list page)
+  hideRoleSelector = false,
+  // If provided, force the role to this value (e.g. 'driver') and hide role selector
+  forceRole = null,
 }) => {
   const isEdit = Boolean(initialData);
   const [role, setRole] = useState(defaultRole);
@@ -24,10 +28,29 @@ const CreateAccountModal = ({
   const [phone, setPhone] = useState("");
   const [licenseNumber, setLicenseNumber] = useState("");
   const [loading, setLoading] = useState(false);
+  const [autoDetectedDriver, setAutoDetectedDriver] = useState(false);
 
   useEffect(() => {
+    // Auto-detect driver when initialData looks like a driver (has license or DRV id)
     if (initialData) {
-      setRole(initialData.role || defaultRole || "parent");
+      const looksLikeDriver =
+        !!initialData.license_number ||
+        !!initialData.licenseNumber ||
+        (initialData.id &&
+          typeof initialData.id === "string" &&
+          initialData.id.startsWith("DRV")) ||
+        (initialData.User && initialData.User.role === "driver");
+      if (looksLikeDriver) {
+        setAutoDetectedDriver(true);
+        setRole("driver");
+      }
+
+      // If caller forces role, use it (and it will hide selector)
+      if (forceRole) {
+        setRole(forceRole);
+      } else if (!looksLikeDriver) {
+        setRole(initialData.role || defaultRole || "parent");
+      }
       setName(initialData.full_name || initialData.fullName || "");
       setPrefillId(initialData.id || null);
       setPhone(initialData.phone || "");
@@ -51,6 +74,19 @@ const CreateAccountModal = ({
       setLicenseNumber("");
     }
   }, [initialData, defaultRole, open]);
+
+  // Debug: log props when modal opens so developer can inspect runtime values
+  useEffect(() => {
+    if (open) {
+      // eslint-disable-next-line no-console
+      console.log("[CreateAccountModal] open with props:", {
+        hideRoleSelector,
+        forceRole,
+        role,
+        initialData,
+      });
+    }
+  }, [open]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -218,75 +254,87 @@ const CreateAccountModal = ({
     }
   };
 
+  // Determine title based on role and edit/create state
+  const modalTitle = isEdit
+    ? role === "driver"
+      ? "Chỉnh sửa tài xế"
+      : "Chỉnh sửa tài khoản"
+    : role === "driver"
+    ? "Tạo tài xế mới"
+    : "Tạo tài khoản mới";
+
   return (
-    <AccountModal
-      open={open}
-      onClose={onClose}
-      title={isEdit ? "Chỉnh sửa tài khoản" : "Tạo tài khoản mới"}
-    >
+    <AccountModal open={open} onClose={onClose} title={modalTitle}>
       <form onSubmit={handleSubmit} className="modal-form">
-        {/* Role selector */}
-        <div className="form-group">
-          <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
-            <label
-              className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${
-                role === "parent" ? "bg-white shadow" : "text-gray-700"
-              }`}
-            >
-              <input
-                type="radio"
-                checked={role === "parent"}
-                onChange={() => setRole("parent")}
-                className="hidden"
-              />
-              Phụ huynh
-            </label>
-            <label
-              className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${
-                role === "driver" ? "bg-white shadow" : "text-gray-700"
-              }`}
-            >
-              <input
-                type="radio"
-                checked={role === "driver"}
-                onChange={() => setRole("driver")}
-                className="hidden"
-              />
-              Tài xế
-            </label>
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label>Username *</label>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Username"
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label>Email *</label>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            required
-          />
-        </div>
-
-        {!isEdit && (
+        {/* Role selector - hidden when hideRoleSelector is true */}
+        {!(hideRoleSelector || forceRole || autoDetectedDriver) && (
           <div className="form-group">
-            <label>Password *</label>
-            <input
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-            />
+            <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
+              <label
+                className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${
+                  role === "parent" ? "bg-white shadow" : "text-gray-700"
+                }`}
+              >
+                <input
+                  type="radio"
+                  checked={role === "parent"}
+                  onChange={() => setRole("parent")}
+                  className="hidden"
+                />
+                Phụ huynh
+              </label>
+              <label
+                className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${
+                  role === "driver" ? "bg-white shadow" : "text-gray-700"
+                }`}
+              >
+                <input
+                  type="radio"
+                  checked={role === "driver"}
+                  onChange={() => setRole("driver")}
+                  className="hidden"
+                />
+                Tài xế
+              </label>
+            </div>
           </div>
+        )}
+
+        {/* Account fields: hide for driver-only flows to simplify UI */}
+        {role !== "driver" && (
+          <>
+            <div className="form-group">
+              <label>Username *</label>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Email *</label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                required
+              />
+            </div>
+
+            {!isEdit && (
+              <div className="form-group">
+                <label>Password *</label>
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  required
+                />
+              </div>
+            )}
+          </>
         )}
 
         <div className="form-group">
