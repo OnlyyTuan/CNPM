@@ -88,7 +88,7 @@ const Dashboard = () => {
       }
     };
     fetchLive();
-    const intervalId = setInterval(fetchLive, 3000);
+    const intervalId = setInterval(fetchLive, 5000);
 
     return () => {
       canceled = true;

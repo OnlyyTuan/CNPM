@@ -6,7 +6,7 @@ try {
   dbConfig = {
     HOST: process.env.DB_HOST || cfg.HOST || "127.0.0.1",
     USER: process.env.DB_USER || cfg.USER || "root",
-    PASSWORD: process.env.DB_PASSWORD || cfg.PASSWORD || "thinh2014",
+    PASSWORD: process.env.DB_PASSWORD || cfg.PASSWORD || "",
     DB: process.env.DB_NAME || cfg.DB || "smartschoolbus",
     DIALECT: cfg.DIALECT || "mysql",
     PORT: process.env.DB_PORT ? Number(process.env.DB_PORT) : cfg.PORT || 3306,
@@ -17,7 +17,7 @@ try {
   dbConfig = {
     HOST: process.env.DB_HOST || "127.0.0.1",
     USER: process.env.DB_USER || "root",
-    PASSWORD: process.env.DB_PASSWORD || "thinh2014",
+    PASSWORD: process.env.DB_PASSWORD || "",
     DB: process.env.DB_NAME || "smartschoolbus",
     DIALECT: "mysql",
     PORT: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,

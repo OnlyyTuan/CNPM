@@ -14,7 +14,7 @@ async function startServer() {
         console.log('✅ Kết nối Database thành công!');
 
         // Khởi động server
-        const PORT = config.PORT || 3000;
+        const PORT = config.PORT || 5000;
         app.listen(PORT, () => {
             console.log(`🚀 Server đang chạy: http://localhost:${PORT}`);
             console.log(`📊 API Endpoints:`);
