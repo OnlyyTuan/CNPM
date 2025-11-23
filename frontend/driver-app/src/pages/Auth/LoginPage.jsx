@@ -45,11 +45,22 @@ const LoginPage = () => {
         }
       );
 
-      if (response.data.success) {
-        const { user, token } = response.data.data;
+      if (response.data && response.data.success) {
+        // Support two backend response shapes:
+        // 1) { success, data: { user, token } }  (authController)
+        // 2) { success, user, token }            (other endpoints)
+        let user, token;
+        if (response.data.data) {
+          user = response.data.data.user;
+          token = response.data.data.token;
+        } else {
+          user = response.data.user || null;
+          token = response.data.token || null;
+        }
 
-        // Kiểm tra role driver hoặc admin
-        if (user.role !== "driver" && user.role !== "admin") {
+        // Kiểm tra role driver hoặc admin (case-insensitive)
+        const role = (user.role || "").toString().toLowerCase();
+        if (role !== "driver" && role !== "admin") {
           toast.error("Bạn không có quyền truy cập vào hệ thống Driver");
           return;
         }
@@ -211,7 +222,8 @@ const LoginPage = () => {
                 <span className="font-mono font-bold">driver1</span>
               </p>
               <p>
-                • Mật khẩu: <span className="font-mono font-bold">123456</span>
+                • Mật khẩu:{" "}
+                <span className="font-mono font-bold">password123</span>
               </p>
             </div>
           </div>

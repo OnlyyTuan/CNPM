@@ -46,8 +46,9 @@ const LoginPage = () => {
       if (response.data.success) {
         const { user, token } = response.data.data;
 
-        // Kiểm tra role admin
-        if (user.role !== "admin") {
+        // Kiểm tra role admin (case-insensitive)
+        const role = (user.role || "").toString().toLowerCase();
+        if (role !== "admin") {
           toast.error("Bạn không có quyền truy cập vào hệ thống Admin");
           return;
         }

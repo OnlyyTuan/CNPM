@@ -1,14 +1,15 @@
 // frontend/src/api/scheduleApi.js
 // API client cho Lịch trình
 
-import axios from 'axios';
-import { API_ENDPOINTS } from '../config/api.config';
+import axios from "axios";
+import axiosClient from "./axiosClient";
+import { API_ENDPOINTS } from "../config/api.config";
 
 const API_URL = API_ENDPOINTS.SCHEDULES;
 
 // Lấy tất cả lịch trình
 export const getAllSchedules = async () => {
-  const response = await axios.get(API_URL);
+  const response = await axiosClient.get(API_URL);
   return response.data;
 };
 
@@ -20,8 +21,16 @@ export const getScheduleById = async (id) => {
 
 // Lấy lịch trình theo khoảng thời gian
 export const getSchedulesByDateRange = async (startDate, endDate) => {
-  const response = await axios.get(`${API_URL}/range`, {
-    params: { startDate, endDate }
+  const response = await axiosClient.get(`${API_URL}/range`, {
+    params: { startDate, endDate },
+  });
+  return response.data;
+};
+
+// Lấy lịch trình của tài xế đang đăng nhập (server lọc theo token)
+export const getMySchedules = async (startDate = null, endDate = null) => {
+  const response = await axiosClient.get(`${API_URL}/my`, {
+    params: startDate && endDate ? { startDate, endDate } : {},
   });
   return response.data;
 };

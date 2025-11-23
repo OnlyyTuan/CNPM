@@ -22,9 +22,27 @@ axiosClient.interceptors.request.use(
     // Lấy Token từ localStorage (hoặc từ store Auth)
     const token = localStorage.getItem("token");
 
+    // Debug: log token presence (temporary)
+    try {
+      // Avoid leaking token in production logs; only log existence and length
+      if (token) {
+        console.debug(
+          "[axiosClient] token found, length:",
+          String(token).length
+        );
+      } else {
+        console.debug("[axiosClient] no token in localStorage");
+      }
+    } catch (e) {
+      // ignore
+    }
+
     if (token) {
-      // Đính kèm Token vào Header Authorization
-      config.headers.Authorization = `Bearer ${token}`;
+      // Đính kèm Token vào Header Authorization (include both cases)
+      const bearer = `Bearer ${token}`;
+      config.headers = config.headers || {};
+      config.headers.Authorization = bearer;
+      config.headers.authorization = bearer;
     }
     return config;
   },
