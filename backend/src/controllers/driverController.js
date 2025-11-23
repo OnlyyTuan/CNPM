@@ -189,32 +189,34 @@ const driverController = {
   async getMyBuses(req, res, next) {
     try {
       const userId = req.user.id; // Từ verifyToken middleware
-      
+
       // Tìm driver từ user_id
       const driver = await db.Driver.findOne({
         where: { userId: userId },
-        include: [{
-          model: db.Bus,
-          as: 'CurrentBus',
-          include: [
-            {
-              model: db.Route,
-              as: 'CurrentRoute',
-              attributes: ['id', 'routeName']
-            },
-            {
-              model: db.Location,
-              as: 'CurrentLocation',
-              attributes: ['id', 'name', 'latitude', 'longitude']
-            }
-          ]
-        }]
+        include: [
+          {
+            model: db.Bus,
+            as: "CurrentBus",
+            include: [
+              {
+                model: db.Route,
+                as: "CurrentRoute",
+                attributes: ["id", "routeName"],
+              },
+              {
+                model: db.Location,
+                as: "CurrentLocation",
+                attributes: ["id", "name", "latitude", "longitude"],
+              },
+            ],
+          },
+        ],
       });
 
       if (!driver) {
         return res.status(404).json({
           success: false,
-          message: "Không tìm thấy thông tin tài xế"
+          message: "Không tìm thấy thông tin tài xế",
         });
       }
 
@@ -224,32 +226,32 @@ const driverController = {
         include: [
           {
             model: db.Driver,
-            as: 'CurrentDriver',
-            attributes: ['id', 'fullName', 'phone']
+            as: "CurrentDriver",
+            attributes: ["id", "fullName", "phone"],
           },
           {
             model: db.Route,
-            as: 'CurrentRoute',
-            attributes: ['id', 'routeName']
+            as: "CurrentRoute",
+            attributes: ["id", "routeName"],
           },
           {
             model: db.Location,
-            as: 'CurrentLocation',
-            attributes: ['id', 'name', 'latitude', 'longitude']
-          }
-        ]
+            as: "CurrentLocation",
+            attributes: ["id", "name", "latitude", "longitude"],
+          },
+        ],
       });
 
       res.status(200).json({
         success: true,
-        data: buses
+        data: buses,
       });
     } catch (error) {
       console.error("Lỗi khi lấy xe của tài xế:", error);
       res.status(500).json({
         success: false,
         message: "Lỗi khi lấy thông tin xe",
-        error: error.message
+        error: error.message,
       });
     }
   },
@@ -258,38 +260,39 @@ const driverController = {
   async getMyStudents(req, res, next) {
     try {
       const userId = req.user.id;
-      
+
       // Tìm driver
       const driver = await db.Driver.findOne({
-        where: { userId: userId }
+        where: { userId: userId },
       });
 
       if (!driver) {
         return res.status(404).json({
           success: false,
-          message: "Không tìm thấy thông tin tài xế"
+          message: "Không tìm thấy thông tin tài xế",
         });
       }
 
       // Lấy xe của tài xế
       const buses = await db.Bus.findAll({
         where: { driver_id: driver.id },
-        attributes: ['id']
+        attributes: ["id"],
       });
 
       if (!buses || buses.length === 0) {
         return res.status(200).json({
           success: true,
           data: [],
-          message: "Bạn chưa được gán xe nào"
+          message: "Bạn chưa được gán xe nào",
         });
       }
 
-      const busIds = buses.map(b => b.id);
+      const busIds = buses.map((b) => b.id);
 
       // Lấy học sinh được gán vào các xe này
       const dbConnection = require("../database");
-      const [students] = await dbConnection.query(`
+      const [students] = await dbConnection.query(
+        `
         SELECT 
           s.*,
           b.id as bus_id,
@@ -311,18 +314,101 @@ const driverController = {
         LEFT JOIN parent p ON s.parent_id = p.id
         WHERE s.assigned_bus_id IN (?)
         ORDER BY s.full_name ASC
-      `, [busIds]);
+      `,
+        [busIds]
+      );
 
       res.status(200).json({
         success: true,
-        data: students
+        data: students,
       });
     } catch (error) {
       console.error("Lỗi khi lấy học sinh của tài xế:", error);
       res.status(500).json({
         success: false,
         message: "Lỗi khi lấy danh sách học sinh",
-        error: error.message
+        error: error.message,
+      });
+    }
+  },
+
+  // 8. Tài xế cập nhật trạng thái học sinh: 'pickup' (đã đón) hoặc 'dropoff' (đã tới)
+  async updateStudentStatus(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const studentId = req.params.id;
+      const { action } = req.body; // expected: 'pickup' or 'dropoff'
+
+      if (!action || !["pickup", "dropoff"].includes(action)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Hành động không hợp lệ" });
+      }
+
+      // Tìm driver theo user
+      const driver = await db.Driver.findOne({ where: { userId: userId } });
+      if (!driver) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy tài xế" });
+      }
+
+      // Lấy danh sách bus id của driver
+      const buses = await db.Bus.findAll({
+        where: { driver_id: driver.id },
+        attributes: ["id"],
+      });
+      const busIds = (buses || []).map((b) => b.id);
+
+      if (busIds.length === 0) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Bạn chưa được gán xe nào" });
+      }
+
+      // Tìm student và đảm bảo student.assigned_bus_id thuộc về busIds
+      const student = await db.Student.findOne({ where: { id: studentId } });
+      if (!student) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Không tìm thấy học sinh" });
+      }
+
+      const assignedBusId =
+        student.assigned_bus_id ||
+        student.assignedBusId ||
+        student.assigned_bus ||
+        null;
+      if (!assignedBusId || !busIds.includes(assignedBusId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Bạn không có quyền cập nhật học sinh này",
+        });
+      }
+
+      // Thực hiện cập nhật theo action
+      if (action === "pickup") {
+        await db.Student.update(
+          { status: "IN_BUS" },
+          { where: { id: studentId } }
+        );
+      } else if (action === "dropoff") {
+        // Khi đã tới nơi, đánh dấu 'ARRIVED' và gỡ assigned_bus_id để học sinh không còn hiện trên danh sách tài xế
+        await db.Student.update(
+          { status: "ARRIVED", assigned_bus_id: null },
+          { where: { id: studentId } }
+        );
+      }
+
+      return res
+        .status(200)
+        .json({ success: true, message: "Cập nhật trạng thái thành công" });
+    } catch (error) {
+      console.error("Lỗi khi cập nhật trạng thái học sinh:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi hệ thống",
+        error: error.message,
       });
     }
   },

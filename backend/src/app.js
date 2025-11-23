@@ -75,6 +75,17 @@ app.get("/api/v1/health", (req, res) => {
     .send({ status: "OK", service: "SmartSchoolBus Backend v1.0" });
 });
 
+// DB Status Endpoint - thử authenticate nhanh
+app.get("/api/v1/db-status", async (req, res) => {
+  try {
+    const db = require("./db");
+    await db.sequelize.authenticate();
+    return res.status(200).json({ connected: true });
+  } catch (err) {
+    return res.status(503).json({ connected: false, error: err.message });
+  }
+});
+
 // Route trang chủ
 app.get("/", (req, res) => {
   res.send(

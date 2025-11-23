@@ -10,7 +10,9 @@ async function startServer() {
   try {
     // <<< THÊM TRY
     // 1. Kết nối Database
-    await db.connectDB(); // Hàm này phải đảm bảo trả về lỗi nếu kết nối thất bại // 2. Lắng nghe Server
+    await db.connectDB(); // Hàm này phải đảm bảo trả về lỗi nếu kết nối thất bại
+    // Đánh dấu DB đã kết nối để các phần khác có thể kiểm tra
+    app.locals.dbConnected = true;
 
     const PORT = config.PORT;
     app.listen(PORT, () => {
@@ -18,11 +20,19 @@ async function startServer() {
     });
   } catch (error) {
     // <<< THÊM CATCH
+    // Nếu không kết nối được DB, log lỗi nhưng KHÔNG thoát process.
+    // Thay vào đó khởi động server ở chế độ degraded để dễ debug phía client.
     console.error(
-      "🚨 Lỗi nghiêm trọng khi khởi động Server hoặc Kết nối DB:",
+      "🚨 Lỗi khi kết nối Database (server sẽ chạy ở chế độ degraded):",
       error.message
-    ); // Thoát ứng dụng nếu DB không kết nối được
-    process.exit(1);
+    );
+    app.locals.dbConnected = false;
+    const PORT = config.PORT;
+    app.listen(PORT, () => {
+      console.log(
+        `⚠️ Server khởi động nhưng chưa kết nối DB. Truy cập http://localhost:${PORT}/api/v1/db-status để kiểm tra chi tiết.`
+      );
+    });
   }
 }
 
@@ -30,13 +40,13 @@ async function startServer() {
 startServer();
 
 // Bắt unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("🚨 Unhandled Rejection at:", promise, "reason:", reason);
   process.exit(1);
 });
 
 // Bắt uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('🚨 Uncaught Exception:', error);
+process.on("uncaughtException", (error) => {
+  console.error("🚨 Uncaught Exception:", error);
   process.exit(1);
 });

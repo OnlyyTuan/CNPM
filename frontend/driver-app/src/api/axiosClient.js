@@ -3,7 +3,7 @@
 import axios from "axios";
 
 // Định nghĩa base URL của Backend (sử dụng biến môi trường nếu cần)
-const BASE_URL = "http://localhost:3000/api/v1";
+const BASE_URL = "http://localhost:5000/api/v1";
 
 const axiosClient = axios.create({
   baseURL: BASE_URL,
@@ -22,9 +22,27 @@ axiosClient.interceptors.request.use(
     // Lấy Token từ localStorage (hoặc từ store Auth)
     const token = localStorage.getItem("token");
 
+    // Debug: log token presence (temporary)
+    try {
+      // Avoid leaking token in production logs; only log existence and length
+      if (token) {
+        console.debug(
+          "[axiosClient] token found, length:",
+          String(token).length
+        );
+      } else {
+        console.debug("[axiosClient] no token in localStorage");
+      }
+    } catch (e) {
+      // ignore
+    }
+
     if (token) {
-      // Đính kèm Token vào Header Authorization
-      config.headers.Authorization = `Bearer ${token}`;
+      // Đính kèm Token vào Header Authorization (include both cases)
+      const bearer = `Bearer ${token}`;
+      config.headers = config.headers || {};
+      config.headers.Authorization = bearer;
+      config.headers.authorization = bearer;
     }
     return config;
   },

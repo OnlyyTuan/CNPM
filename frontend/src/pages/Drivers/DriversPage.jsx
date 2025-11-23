@@ -44,6 +44,15 @@ const DriversPage = () => {
   useEffect(() => {
     let filtered = drivers;
 
+    // Debug: show current drivers and filterStatus
+    // eslint-disable-next-line no-console
+    console.log(
+      "[DriversPage] drivers fetched:",
+      drivers.length,
+      drivers.map((d) => d.status)
+    );
+    // eslint-disable-next-line no-console
+    console.log("[DriversPage] current filterStatus:", filterStatus);
     // Lọc theo tìm kiếm
     if (searchTerm) {
       filtered = filtered.filter(
@@ -54,9 +63,30 @@ const DriversPage = () => {
       );
     }
 
-    // Lọc theo trạng thái
+    // Lọc theo trạng thái — hỗ trợ nhiều biến thể của status từ backend
+    const STATUS_MAP = {
+      ALL: null,
+      DRIVING: ["DRIVING", "driving", "ACTIVE"],
+      OFF_DUTY: ["OFF_DUTY", "off_duty", "OFF-DUTY", "OFF DUTY", "OFFLINE"],
+      INACTIVE: ["INACTIVE", "inactive", "IN_ACTIVE", "NOT_ACTIVE", "OFFLINE"],
+    };
+
+    const statusMatches = (driverStatus, filter) => {
+      if (!filter || filter === "ALL") return true;
+      const possibles = STATUS_MAP[filter] || [filter];
+      // Normalize driverStatus: treat null/undefined/empty as 'INACTIVE'
+      const driverStatusNormalized = driverStatus
+        ? driverStatus.toString().toLowerCase()
+        : "inactive";
+      return possibles.some(
+        (s) => s.toString().toLowerCase() === driverStatusNormalized
+      );
+    };
+
     if (filterStatus !== "ALL") {
-      filtered = filtered.filter((driver) => driver.status === filterStatus);
+      filtered = filtered.filter((driver) =>
+        statusMatches(driver.status, filterStatus)
+      );
     }
 
     setFilteredDrivers(filtered);

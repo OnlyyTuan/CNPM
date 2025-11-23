@@ -69,53 +69,127 @@ const StudentListPage = () => {
       </header>
 
       {students.length === 0 ? (
-        <div style={{ textAlign: 'center', marginTop: '50px', color: '#666' }}>
-          <p>Bạn chưa có học sinh nào trên xe. Vui lòng liên hệ quản trị viên.</p>
+        <div style={{ textAlign: "center", marginTop: "50px", color: "#666" }}>
+          <p>
+            Bạn chưa có học sinh nào trên xe. Vui lòng liên hệ quản trị viên.
+          </p>
         </div>
       ) : (
-      <div style={styles.tableWrapper}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Tên Học sinh</th>
-              <th style={styles.th}>Lớp</th>
-              <th style={styles.th}>Trạng thái</th>
-              <th style={styles.th}>Xe buýt</th>
-              <th style={styles.th}>Điểm đón</th>
-              <th style={styles.th}>Điểm trả</th>
-              <th style={styles.th}>Phụ huynh</th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.map((student) => (
-              <tr key={student.id} style={styles.tr}>
-                <td style={styles.td}>{student.full_name}</td>
-                <td style={styles.td}>{student.class || 'N/A'}</td>
-                <td style={styles.td}>
-                  <span style={styles.statusBadge(student.status)}>
-                    {student.status === 'WAITING' ? 'Chờ đón' : 
-                     student.status === 'IN_BUS' ? 'Trên xe' : 
-                     student.status === 'ABSENT' ? 'Vắng mặt' : student.status}
-                  </span>
-                </td>
-                <td style={styles.td}>
-                  {student.bus_license_plate || 'Chưa gán'}
-                </td>
-                <td style={styles.td}>
-                  {student.pickup_location_name || 'N/A'}
-                </td>
-                <td style={styles.td}>
-                  {student.dropoff_location_name || 'N/A'}
-                </td>
-                <td style={styles.td}>
-                  {student.parent_name || 'N/A'}
-                  {student.parent_phone && <div style={{ fontSize: '0.85em', color: '#666' }}>{student.parent_phone}</div>}
-                </td>
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Tên Học sinh</th>
+                <th style={styles.th}>Lớp</th>
+                <th style={styles.th}>Trạng thái</th>
+                <th style={styles.th}>Xe buýt</th>
+                <th style={styles.th}>Điểm đón</th>
+                <th style={styles.th}>Điểm trả</th>
+                <th style={styles.th}>Phụ huynh</th>
+                <th style={styles.th}>Hành động</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {students.map((student) => (
+                <tr key={student.id} style={styles.tr}>
+                  <td style={styles.td}>{student.full_name}</td>
+                  <td style={styles.td}>{student.class || "N/A"}</td>
+                  <td style={styles.td}>
+                    <span style={styles.statusBadge(student.status)}>
+                      {student.status === "WAITING"
+                        ? "Chờ đón"
+                        : student.status === "IN_BUS"
+                        ? "Trên xe"
+                        : student.status === "ABSENT"
+                        ? "Vắng mặt"
+                        : student.status === "ARRIVED"
+                        ? "Đã tới"
+                        : student.status}
+                    </span>
+                  </td>
+                  <td style={styles.td}>
+                    {student.bus_license_plate || "Chưa gán"}
+                  </td>
+                  <td style={styles.td}>
+                    {student.pickup_location_name || "N/A"}
+                  </td>
+                  <td style={styles.td}>
+                    {student.dropoff_location_name || "N/A"}
+                  </td>
+                  <td style={styles.td}>
+                    {student.parent_name || "N/A"}
+                    {student.parent_phone && (
+                      <div style={{ fontSize: "0.85em", color: "#666" }}>
+                        {student.parent_phone}
+                      </div>
+                    )}
+                  </td>
+                  <td style={styles.tdAction}>
+                    {/* Nếu chưa lên xe: cho nút Đã đón */}
+                    {student.status !== "IN_BUS" && (
+                      <button
+                        style={styles.actionButton("edit")}
+                        onClick={async () => {
+                          try {
+                            // Gọi API cập nhật trạng thái
+                            await axiosClient.put(
+                              `/drivers/my/students/${student.id}/status`,
+                              { action: "pickup" }
+                            );
+                            // Làm mới danh sách
+                            fetchStudents();
+                          } catch (err) {
+                            console.error(
+                              "Lỗi khi cập nhật trạng thái pickup:",
+                              err
+                            );
+                            alert(
+                              "Không thể cập nhật trạng thái. Vui lòng thử lại."
+                            );
+                          }
+                        }}
+                      >
+                        Đã đón
+                      </button>
+                    )}
+
+                    {/* Nếu đang trên xe: cho nút Đã tới */}
+                    {student.status === "IN_BUS" && (
+                      <button
+                        style={styles.actionButton("delete")}
+                        onClick={async () => {
+                          if (
+                            !confirm(
+                              "Xác nhận: học sinh đã tới đích và xuống xe?"
+                            )
+                          )
+                            return;
+                          try {
+                            await axiosClient.put(
+                              `/drivers/my/students/${student.id}/status`,
+                              { action: "dropoff" }
+                            );
+                            fetchStudents();
+                          } catch (err) {
+                            console.error(
+                              "Lỗi khi cập nhật trạng thái dropoff:",
+                              err
+                            );
+                            alert(
+                              "Không thể cập nhật trạng thái. Vui lòng thử lại."
+                            );
+                          }
+                        }}
+                      >
+                        Đã tới
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

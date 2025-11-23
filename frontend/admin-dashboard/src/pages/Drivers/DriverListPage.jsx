@@ -9,6 +9,7 @@ const DriverListPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState(null);
 
   const fetchDrivers = async () => {
     try {
@@ -90,13 +91,20 @@ const DriverListPage = () => {
       </header>
       <CreateAccountModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedDriver(null);
+        }}
         onCreated={() => {
           setIsModalOpen(false);
+          setSelectedDriver(null);
           fetchDrivers();
           alert("Thêm tài xế thành công!");
         }}
         defaultRole="driver"
+        hideRoleSelector={true}
+        forceRole="driver"
+        initialData={selectedDriver}
       />
       <div style={styles.tableWrapper}>
         <table style={styles.table}>
@@ -128,7 +136,16 @@ const DriverListPage = () => {
                     : "OFF_DUTY"}
                 </td>
                 <td style={styles.tdAction}>
-                  <button style={styles.actionButton("edit")}>Sửa</button>
+                  <button
+                    style={styles.actionButton("edit")}
+                    onClick={() => {
+                      // Ensure the modal receives role='driver' to avoid any mismatch
+                      setSelectedDriver({ ...driver, role: "driver" });
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    Sửa
+                  </button>
                   <button style={styles.actionButton("assign")}>Gán Xe</button>
                 </td>
               </tr>
