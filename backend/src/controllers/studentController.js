@@ -336,6 +336,44 @@ const studentController = {
       });
     }
   },
+  // backend/src/controllers/studentController.js
+// Thêm hàm mới vào cuối object studentController (trước module.exports)
+
+  // [GET] /api/v1/students/by-bus/:busId - Dành riêng cho trang lịch trình
+  async getByBusId(req, res) {
+    try {
+      const { busId } = req.params;
+
+      const [students] = await db.query(`
+        SELECT
+          s.id,
+          s.full_name AS ho_ten_hs,
+          s.class AS lop,
+          l1.name AS diem_don,
+          l2.name AS diem_tra,
+          p.full_name AS ho_ten_phu_huynh,
+          p.phone AS sdt_phu_huynh
+        FROM student s
+        LEFT JOIN location l1 ON s.pickup_location_id = l1.id
+        LEFT JOIN location l2 ON s.dropoff_location_id = l2.id
+        LEFT JOIN parent p ON s.parent_id = p.id
+        WHERE s.assigned_bus_id = ?
+        ORDER BY l1.name, s.full_name
+      `, [busId]);
+
+      res.json({
+        success: true,
+        data: students
+      });
+    } catch (error) {
+      console.error("Lỗi khi lấy học sinh theo xe:", error);
+      res.status(500).json({
+        success: false,
+        message: "Lỗi server",
+        error: error.message
+      });
+    }
+  },
 };
 
 module.exports = studentController;
