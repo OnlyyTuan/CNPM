@@ -25,12 +25,8 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         field: "parent_contact", // Ánh xạ parentContact (JS) -> parent_contact (SQL)
       },
-      address: {
-        type: DataTypes.STRING,
-        field: "address",
-      },
       status: {
-        type: DataTypes.ENUM("IN_BUS", "WAITING", "ABSENT"),
+        type: DataTypes.ENUM("IN_BUS", "WAITING", "ABSENT", "ARRIVED"),
         defaultValue: "WAITING",
       },
       // Khóa ngoại dạng camelCase (underscored: true sẽ ánh xạ sang snake_case trong DB)

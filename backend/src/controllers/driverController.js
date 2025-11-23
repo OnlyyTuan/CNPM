@@ -334,10 +334,16 @@ const driverController = {
 
   // 8. Tài xế cập nhật trạng thái học sinh: 'pickup' (đã đón) hoặc 'dropoff' (đã tới)
   async updateStudentStatus(req, res, next) {
+    console.log("[updateStudentStatus] START - req.user:", JSON.stringify(req.user));
+    console.log("[updateStudentStatus] req.params:", JSON.stringify(req.params));
+    console.log("[updateStudentStatus] req.body:", JSON.stringify(req.body));
+    
     try {
       const userId = req.user.id;
       const studentId = req.params.id;
       const { action } = req.body; // expected: 'pickup' or 'dropoff'
+
+      console.log("[updateStudentStatus] userId:", userId, "studentId:", studentId, "action:", action);
 
       if (!action || !["pickup", "dropoff"].includes(action)) {
         return res
@@ -347,6 +353,7 @@ const driverController = {
 
       // Tìm driver theo user
       const driver = await db.Driver.findOne({ where: { userId: userId } });
+      console.log("[updateStudentStatus] driver found:", driver?.id);
       if (!driver) {
         return res
           .status(404)
@@ -393,9 +400,9 @@ const driverController = {
           { where: { id: studentId } }
         );
       } else if (action === "dropoff") {
-        // Khi đã tới nơi, đánh dấu 'ARRIVED' và gỡ assigned_bus_id để học sinh không còn hiện trên danh sách tài xế
+        // Khi đã tới nơi, chuyển về WAITING để sẵn sàng cho chuyến tiếp theo
         await db.Student.update(
-          { status: "ARRIVED", assigned_bus_id: null },
+          { status: "WAITING" },
           { where: { id: studentId } }
         );
       }

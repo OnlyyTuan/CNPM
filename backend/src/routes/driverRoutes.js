@@ -13,6 +13,11 @@ router.get("/my/students", verifyToken, driverController.getMyStudents);
 router.put(
   "/my/students/:id/status",
   verifyToken,
+  (req, res, next) => {
+    console.log("[driverRoutes] PUT /my/students/:id/status - hit middleware");
+    console.log("[driverRoutes] req.user:", req.user);
+    next();
+  },
   driverController.updateStudentStatus
 );
 
