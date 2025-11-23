@@ -21,4 +21,5 @@ router.delete('/:id', studentController.delete);
 
 // router.get('/:id', studentController.findOne); // Lấy chi tiết
 
+router.get('/by-bus/:busId', studentController.getByBusId);
 module.exports = router;

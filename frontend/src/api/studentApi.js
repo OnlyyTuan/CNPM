@@ -28,3 +28,8 @@ export const deleteStudent = async (id) => {
   const response = await axiosClient.delete(`/students/${id}`);
   return response.data;
 };
+
+export const getStudentsByBusId = async (busId) => {
+  const response = await axiosClient.get(`/students/by-bus/${busId}`);
+  return response.data;
+};
