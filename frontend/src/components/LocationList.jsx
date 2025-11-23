@@ -14,7 +14,7 @@ function LocationList() {
     const fetchLocations = async () => {
       try {
         //  địa chỉ backend thực tế của bạn
-        const response = await fetch("http://localhost:3000/api/v1/locations");
+        const response = await fetch("http://localhost:5000/api/v1/locations");
 
         // Kiểm tra nếu response không thành công (ví dụ: lỗi 404, 500)
         if (!response.ok) {

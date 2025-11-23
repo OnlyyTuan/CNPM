@@ -1,17 +1,17 @@
 // frontend/src/pages/Auth/LoginPage.jsx
 // Trang đăng nhập cho Admin
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bus, Lock, User, Eye, EyeOff } from 'lucide-react';
-import toast from 'react-hot-toast';
-import axios from 'axios';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Bus, Lock, User, Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
+import axios from "axios";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,42 +25,48 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.username || !formData.password) {
-      toast.error('Vui lòng nhập đầy đủ thông tin');
+      toast.error("Vui lòng nhập đầy đủ thông tin");
       return;
     }
 
     try {
       setLoading(true);
-      
+
       // Gọi API đăng nhập (giả định endpoint là /api/v1/auth/login)
-      const response = await axios.post('http://localhost:3000/api/v1/auth/login', {
-        username: formData.username,
-        password: formData.password,
-      });
+      const response = await axios.post(
+        "http://localhost:5000/api/v1/auth/login",
+        {
+          username: formData.username,
+          password: formData.password,
+        }
+      );
 
       if (response.data.success) {
         const { user, token } = response.data.data;
-        
+
         // Kiểm tra role admin
-        if (user.role !== 'admin') {
-          toast.error('Bạn không có quyền truy cập vào hệ thống Admin');
+        if (user.role !== "admin") {
+          toast.error("Bạn không có quyền truy cập vào hệ thống Admin");
           return;
         }
 
         // Lưu token và user info vào localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        
-        toast.success('Đăng nhập thành công!');
-        
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+
+        toast.success("Đăng nhập thành công!");
+
         // Chuyển hướng đến dashboard
-        navigate('/admin/dashboard');
+        navigate("/admin/dashboard");
       }
     } catch (error) {
-      console.error('Lỗi đăng nhập:', error);
-      toast.error(error.response?.data?.message || 'Tên đăng nhập hoặc mật khẩu không đúng');
+      console.error("Lỗi đăng nhập:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Tên đăng nhập hoặc mật khẩu không đúng"
+      );
     } finally {
       setLoading(false);
     }
@@ -118,7 +124,7 @@ const LoginPage = () => {
                   <Lock size={20} className="text-gray-400" />
                 </div>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
@@ -132,9 +138,15 @@ const LoginPage = () => {
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   {showPassword ? (
-                    <EyeOff size={20} className="text-gray-400 hover:text-gray-600" />
+                    <EyeOff
+                      size={20}
+                      className="text-gray-400 hover:text-gray-600"
+                    />
                   ) : (
-                    <Eye size={20} className="text-gray-400 hover:text-gray-600" />
+                    <Eye
+                      size={20}
+                      className="text-gray-400 hover:text-gray-600"
+                    />
                   )}
                 </button>
               </div>
@@ -145,19 +157,39 @@ const LoginPage = () => {
               type="submit"
               disabled={loading}
               className={`w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold
-                ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700 active:bg-blue-800'}
+                ${
+                  loading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-blue-700 active:bg-blue-800"
+                }
                 transition-colors duration-200 shadow-lg`}
             >
               {loading ? (
                 <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Đang đăng nhập...
                 </span>
               ) : (
-                'Đăng nhập'
+                "Đăng nhập"
               )}
             </button>
           </form>
@@ -168,8 +200,13 @@ const LoginPage = () => {
               📝 Thông tin đăng nhập từ Database:
             </p>
             <div className="text-sm text-blue-700 space-y-1">
-              <p>• Tên đăng nhập: <span className="font-mono font-bold">admin1</span></p>
-              <p>• Mật khẩu: <span className="font-mono font-bold">123456</span></p>
+              <p>
+                • Tên đăng nhập:{" "}
+                <span className="font-mono font-bold">admin1</span>
+              </p>
+              <p>
+                • Mật khẩu: <span className="font-mono font-bold">123456</span>
+              </p>
             </div>
           </div>
         </div>
