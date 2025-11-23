@@ -32,23 +32,17 @@ const speedToColor = (speed) => {
 
 const getSpeedIcon = (speed) => {
   const color = speedToColor(speed);
-  // Icon xe bus với z-index cao để đè lên điểm dừng
+  // DivIcon hình tròn có viền, dễ nhìn trên map
   const html = `
     <span style="
       display:inline-block;
-      width:22px; height:22px;
-      background-color:${color};
-      border-radius:3px;
+      width:18px; height:18px;
+      border-radius:50%;
+      background:${color};
       border:2px solid white;
       box-shadow:0 0 0 2px rgba(0,0,0,0.25);
-      font-size:14px;
-      font-weight:bold;
-      color:white;
-      text-align:center;
-      line-height:18px;
-      z-index:1000;
-    ">🚌</span>`;
-  return L.divIcon({ className: '', html, iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -12] });
+    "></span>`;
+  return L.divIcon({ className: '', html, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10] });
 };
 
 // Component phụ để tự động fitBounds lần đầu
@@ -259,11 +253,10 @@ const LiveLocationPage = () => {
             {stops.map((stop) => {
               const stopIcon = L.divIcon({
                 className: '',
-                html: '<div style="font-size:16px; opacity:0.7;">🚏</div>',
-                iconSize: [16, 16],
-                iconAnchor: [8, 16],
-                popupAnchor: [0, -16],
-                zIndexOffset: -100, // Đặt z-index thấp để xe đè lên
+                html: '<div style="font-size:24px;">🚏</div>',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24],
+                popupAnchor: [0, -24],
               });
               
               return (

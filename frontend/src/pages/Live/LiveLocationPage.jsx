@@ -40,9 +40,9 @@ const getSpeedIcon = (speed) => {
       border-radius:50%;
       background:${color};
       border:2px solid white;
-      box-shadow:0 0 0 2px rgba(0,0,0,0.25);
+      box-shadow:0 0 0 2px rgba(0,0,0,0.3);
     "></span>`;
-  return L.divIcon({ className: '', html, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10] });
+  return L.divIcon({ className: '', html, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -9] });
 };
 
 // Component phụ để tự động fitBounds lần đầu
@@ -73,6 +73,7 @@ const DynamicMarkers = ({ buses }) => {
             key={uniqueKey}
             position={[bus.lat, bus.lng]} 
             icon={getSpeedIcon(bus.speed)}
+            zIndexOffset={1000}
           >
             <Popup>
               <div>
@@ -250,10 +251,10 @@ const LiveLocationPage = () => {
             {stops.map((stop) => {
               const stopIcon = L.divIcon({
                 className: '',
-                html: '<div style="font-size:24px;">🚏</div>',
-                iconSize: [24, 24],
-                iconAnchor: [12, 24],
-                popupAnchor: [0, -24],
+                html: '<div style="font-size:16px;">🚏</div>',
+                iconSize: [16, 16],
+                iconAnchor: [8, 16],
+                popupAnchor: [0, -16],
               });
               
               return (
@@ -261,6 +262,7 @@ const LiveLocationPage = () => {
                   key={stop.id}
                   position={[stop.latitude, stop.longitude]}
                   icon={stopIcon}
+                  zIndexOffset={100}
                 >
                   <Popup>
                     <div>

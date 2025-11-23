@@ -22,27 +22,35 @@ const locationController = {
   // [POST] /api/v1/routes/locations - Thêm điểm dừng mới
   async create(req, res) {
     try {
+      console.log('📝 Nhận request thêm điểm dừng:', req.body);
       const { name, address, latitude, longitude } = req.body;
       
       if (!name || !address || !latitude || !longitude) {
+        console.log('❌ Thiếu thông tin:', { name, address, latitude, longitude });
         return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
       }
 
-      // Tạo ID tự động dạng LOC001, LOC002, ...
-      const lastLocation = await Location.findOne({
+      // Tìm tất cả locations có ID theo format LOC### chính xác
+      const locations = await Location.findAll({
         where: {
           id: {
-            [Op.like]: 'LOC%'
+            [Op.regexp]: '^LOC[0-9]{3}$'
           }
         },
-        order: [['id', 'DESC']]
+        order: [['id', 'DESC']],
+        limit: 1
       });
 
       let newId = 'LOC001';
-      if (lastLocation) {
-        const lastNum = parseInt(lastLocation.id.replace('LOC', ''));
-        newId = `LOC${String(lastNum + 1).padStart(3, '0')}`;
+      if (locations && locations.length > 0) {
+        const lastLocation = locations[0];
+        const match = lastLocation.id.match(/^LOC(\d{3})$/);
+        if (match) {
+          const lastNum = parseInt(match[1]);
+          newId = `LOC${String(lastNum + 1).padStart(3, '0')}`;
+        }
       }
+      console.log('🆔 Tạo ID mới:', newId);
 
       const location = await Location.create({
         id: newId,
@@ -53,10 +61,12 @@ const locationController = {
         type: 'stop'
       });
 
+      console.log('✅ Tạo điểm dừng thành công:', location.toJSON());
       res.status(201).json(location);
     } catch (error) {
-      console.error('Lỗi khi thêm điểm dừng:', error);
-      res.status(500).json({ message: 'Lỗi khi thêm điểm dừng' });
+      console.error('❌ Lỗi khi thêm điểm dừng:', error);
+      console.error('❌ Stack trace:', error.stack);
+      res.status(500).json({ message: 'Lỗi khi thêm điểm dừng', error: error.message });
     }
   },
 

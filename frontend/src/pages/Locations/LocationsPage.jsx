@@ -6,7 +6,7 @@ import { Search, Plus, Edit, Trash2, MapPin, X } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../config/api.config";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -39,6 +39,7 @@ const LocationsPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [mapPosition, setMapPosition] = useState(null);
+  const [routes, setRoutes] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -49,6 +50,12 @@ const LocationsPage = () => {
   useEffect(() => {
     fetchLocations();
   }, []);
+
+  useEffect(() => {
+    if (showModal) {
+      fetchRoutes();
+    }
+  }, [showModal]);
 
   useEffect(() => {
     const term = searchTerm.toLowerCase();
@@ -73,6 +80,44 @@ const LocationsPage = () => {
       toast.error("Không thể tải danh sách điểm dừng");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRoutes = async () => {
+    try {
+      const response = await axios.get(`${API_ENDPOINTS.ROUTES}`);
+      const allRoutes = response.data;
+      
+      if (!Array.isArray(allRoutes)) {
+        console.error("Routes data is not an array");
+        return;
+      }
+      
+      const filteredRoutes = allRoutes.filter(route => 
+        route.id === 'R001' || route.id === 'R002'
+      );
+      
+      const routesWithWaypoints = await Promise.all(
+        filteredRoutes.map(async (route) => {
+          try {
+            const waypointsRes = await axios.get(`${API_ENDPOINTS.ROUTES}/${route.id}/waypoints`);
+            const data = waypointsRes.data;
+            
+            return {
+              ...route,
+              waypoints: data.waypoints || []
+            };
+          } catch (err) {
+            console.error(`Lỗi khi tải waypoints cho ${route.id}:`, err);
+            return { ...route, waypoints: [] };
+          }
+        })
+      );
+      
+      setRoutes(routesWithWaypoints);
+    } catch (error) {
+      console.error("Lỗi khi tải tuyến đường:", error);
+      setRoutes([]);
     }
   };
 
@@ -437,9 +482,55 @@ const LocationsPage = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
+                      
+                      {/* Hiển thị tuyến đường R001 và R002 */}
+                      {Array.isArray(routes) && routes.map((route) => {
+                        try {
+                          if (!route || !route.waypoints || route.waypoints.length < 2) return null;
+                          
+                          const positions = route.waypoints
+                            .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+                            .map(wp => [parseFloat(wp.latitude), parseFloat(wp.longitude)])
+                            .filter(pos => !isNaN(pos[0]) && !isNaN(pos[1]));
+
+                          if (positions.length < 2) return null;
+
+                          const color = route.id === 'R001' ? '#3B82F6' : '#10B981';
+                          
+                          return (
+                            <Polyline
+                              key={route.id}
+                              positions={positions}
+                              color={color}
+                              weight={4}
+                              opacity={0.7}
+                            />
+                          );
+                        } catch (err) {
+                          console.error("Error rendering route:", err);
+                          return null;
+                        }
+                      })}
+                      
                       <LocationMarker position={mapPosition} setPosition={setMapPosition} />
                     </MapContainer>
                   </div>
+                  
+                  {/* Legend */}
+                  {routes.length > 0 && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs font-semibold text-gray-700 mb-2">Tuyến đường:</p>
+                      {routes.map(route => (
+                        <div key={route.id} className="flex items-center space-x-2 text-xs text-gray-600">
+                          <div 
+                            className="w-8 h-1 rounded"
+                            style={{ backgroundColor: route.id === 'R001' ? '#3B82F6' : '#10B981' }}
+                          />
+                          <span>{route.id} - {route.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -8,7 +8,8 @@ const studentController = require('../controllers/studentController');
 router.get('/', studentController.findAll);
 
 // Lấy stops trên tuyến của xe bus (PHẢI TRƯỚC /:id)
-router.get('/bus/:busId/stops', studentController.getStopsForBus);
+// DISABLED - validation được thực hiện ở frontend qua route waypoints
+// router.get('/bus/:busId/stops', studentController.getStopsForBus);
 
 // Thêm học sinh mới
 router.post('/', studentController.create);

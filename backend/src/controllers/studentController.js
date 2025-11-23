@@ -321,7 +321,9 @@ const studentController = {
   async getStopsForBus(req, res) {
     try {
       const { busId } = req.params;
+      console.log(`[studentController] getStopsForBus called with busId: ${busId}`);
       const stops = await getStopsOnBusRoute(busId);
+      console.log(`[studentController] getStopsOnBusRoute returned ${stops.length} stops`);
 
       res.json({
         success: true,
