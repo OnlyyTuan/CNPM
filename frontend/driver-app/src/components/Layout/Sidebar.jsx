@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Bus, Users, Map, MapPin, Globe, Calendar } from "lucide-react";
+import { Home, Bus, Users, Map, MapPin, Globe, Calendar, MessageSquare } from "lucide-react";
 
 const navItems = [
   { name: "Xe buýt", path: "/buses", Icon: Bus },
@@ -11,6 +11,7 @@ const navItems = [
   { name: "Điểm dừng", path: "/locations", Icon: MapPin },
   { name: "Vị trí xe", path: "/live", Icon: Globe },
   { name: "Lịch trình", path: "/schedules", Icon: Calendar },
+  { name: "Nhắn tin", path: "/chat", Icon: MessageSquare },
 ];
 
 const Sidebar = () => {

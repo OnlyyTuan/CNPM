@@ -73,6 +73,7 @@ db.RouteWaypoint = require("./models/RouteWaypoint")(
 db.Bus = require("./models/Bus")(sequelize, Sequelize.DataTypes);
 db.Driver = require("./models/Driver")(sequelize, Sequelize.DataTypes);
 db.Student = require("./models/Student")(sequelize, Sequelize.DataTypes);
+db.ChatMessage = require("./models/ChatMessage")(sequelize, Sequelize.DataTypes);
 
 // ===================================
 // 3. THIẾT LẬP CÁC QUAN HỆ (ASSOCIATIONS)
@@ -152,6 +153,18 @@ db.Student.belongsTo(db.Location, {
   foreignKey: "dropoff_location_id",
   as: "DropoffLocation",
   // onDelete: "RESTRICT",
+});
+
+// --- ChatMessage & User (Sender and Receiver) ---
+db.ChatMessage.belongsTo(db.User, {
+  foreignKey: "sender_id",
+  as: "Sender",
+  onDelete: "CASCADE",
+});
+db.ChatMessage.belongsTo(db.User, {
+  foreignKey: "receiver_id",
+  as: "Receiver",
+  onDelete: "CASCADE",
 });
 
 // --- Route & RouteWaypoint (Lộ trình và các điểm trên lộ trình) ---

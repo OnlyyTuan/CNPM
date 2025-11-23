@@ -11,6 +11,7 @@ import RouteEdit from './pages/Routes/RouteEdit';
 import LocationsPage from './pages/Locations/LocationsPage';
 import LiveLocationPage from './pages/Live/LiveLocationPage';
 import SchedulePage from './pages/Schedules/SchedulePage';
+import ChatPage from './pages/Chat/ChatPage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/locations" element={<LocationsPage />} />
           <Route path="/live" element={<LiveLocationPage />} />
           <Route path="/schedules" element={<SchedulePage />} />
+          <Route path="/chat" element={<ChatPage />} />
         </Route>
 
         {/* Redirect mọi route không hợp lệ về trang chủ */}

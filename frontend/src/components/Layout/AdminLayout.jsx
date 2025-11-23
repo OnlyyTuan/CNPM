@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -35,6 +36,7 @@ const AdminLayout = () => {
     { path: "/admin/locations", icon: MapPin, label: "Điểm dừng" },
     { path: "/admin/schedules", icon: Calendar, label: "Lịch trình" },
     { path: "/admin/assignments", icon: GitBranch, label: "Phân công" },
+    { path: "/admin/chat", icon: MessageSquare, label: "Nhắn tin" },
   ];
 
   // Kiểm tra menu có đang active không
