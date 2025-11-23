@@ -289,29 +289,8 @@ const busController = {
       if (!bus)
         return res.status(404).json({ message: "Không tìm thấy xe buýt" });
 
-      // Đảm bảo có 1 Location hiện hành cho bus để JOIN nhanh
-      let locId = bus.current_location_id;
-      if (!locId) {
-        locId = `CUR_${id}`; // id ổn định theo bus
-        // Tạo mới nếu chưa có
-        await Location.create({
-          id: locId,
-          name: `Current of ${id}`,
-          latitude,
-          longitude,
-          type: "bus_current",
-        });
-        await Bus.update({ current_location_id: locId }, { where: { id } });
-      } else {
-        // Cập nhật tọa độ vị trí hiện hành
-        const updated = await Location.update(
-          { latitude, longitude },
-          { where: { id: locId } }
-        );
-        console.log(
-          `✅ Đã cập nhật Location ${locId}: lat=${latitude}, lng=${longitude}, rows affected=${updated[0]}`
-        );
-      }
+      // Cập nhật tọa độ vị trí trực tiếp vào bus (không tạo Location riêng)
+      // Giảm data bloat từ location table
 
       // Cập nhật tốc độ (nếu gửi kèm)
       if (speed != null) {
