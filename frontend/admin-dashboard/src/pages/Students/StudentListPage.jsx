@@ -154,7 +154,13 @@ const StudentListPage = () => {
                 <td style={styles.td}>{student.className}</td>
                 <td style={styles.td}>
                   <span style={styles.statusBadge(student.status)}>
-                    {student.status}
+                    {student.status === "WAITING"
+                      ? "Chờ đón"
+                      : student.status === "IN_BUS"
+                      ? "Trên xe"
+                      : student.status === "ABSENT"
+                      ? "Vắng mặt"
+                      : student.status}
                   </span>
                 </td>
                 {/* Giả định rằng Student Model của bạn được JOIN với Bus, Location:

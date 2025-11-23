@@ -154,9 +154,9 @@ const EditStudentModal = ({ isOpen, onClose, student, onSubmit }) => {
               onChange={handleChange}
               style={styles.input}
             >
-              <option value="WAITING">WAITING</option>
-              <option value="IN_BUS">IN_BUS</option>
-              <option value="ABSENT">ABSENT</option>
+              <option value="WAITING">Chờ đón</option>
+              <option value="IN_BUS">Trên xe</option>
+              <option value="ABSENT">Vắng mặt</option>
             </select>
           </div>
 
