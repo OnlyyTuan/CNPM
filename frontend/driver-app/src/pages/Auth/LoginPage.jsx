@@ -222,8 +222,7 @@ const LoginPage = () => {
                 <span className="font-mono font-bold">driver1</span>
               </p>
               <p>
-                • Mật khẩu:{" "}
-                <span className="font-mono font-bold">password123</span>
+                • Mật khẩu: <span className="font-mono font-bold">123456</span>
               </p>
             </div>
           </div>

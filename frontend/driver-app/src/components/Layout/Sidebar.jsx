@@ -5,9 +5,8 @@ import { Link, useLocation } from "react-router-dom";
 import { Home, Bus, Users, Map, MapPin, Globe, Calendar } from "lucide-react";
 
 const navItems = [
-  { name: "Dashboard", path: "/", Icon: Home },
-  { name: "Xe buýt của tôi", path: "/buses", Icon: Bus },
-  { name: "Học sinh của tôi", path: "/students", Icon: Users },
+  { name: "Xe buýt", path: "/buses", Icon: Bus },
+  { name: "Học sinh", path: "/students", Icon: Users },
   { name: "Tuyến đường", path: "/routes", Icon: Map },
   { name: "Điểm dừng", path: "/locations", Icon: MapPin },
   { name: "Vị trí xe", path: "/live", Icon: Globe },
@@ -27,8 +26,11 @@ const Sidebar = () => {
 
       {/* Navigation */}
       <nav style={styles.nav}>
-        {navItems.map(({ name, path, Icon }) => {
-          const isActive = location.pathname === path;
+        {navItems.map(({ name, path, Icon }, idx) => {
+          // Mark active when path matches OR when at root ('/') mark first item active
+          const isActive =
+            location.pathname === path ||
+            (location.pathname === "/" && idx === 0);
           return (
             <Link
               key={name}
