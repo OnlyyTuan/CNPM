@@ -1,3 +1,4 @@
+// frontend/src/pages/Schedules/SchedulePage.jsx
 // Modal xem mới hoàn toàn, chỉ hiển thị thông tin dạng text
 const NewViewScheduleModal = ({ isOpen, onClose, schedule, buses, routes, assignments = [] }) => {
     const [studentModalOpen, setStudentModalOpen] = useState(false);
@@ -673,35 +674,38 @@ const SchedulePage = () => {
   };
 
   // Toolbar: chỉ còn Tháng, Ngày, Danh sách
-  const CustomToolbar = (toolbar) => {
-    const goToBack = () => toolbar.onNavigate("PREV");
-    const goToNext = () => toolbar.onNavigate("NEXT");
-    const goToCurrent = () => toolbar.onNavigate("TODAY");
-    return (
-      <div className="rbc-toolbar mb-5 bg-white px-4 py-4 rounded-t-xl border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <button onClick={goToBack} className="p-2 hover:bg-gray-100 rounded-lg transition"><ChevronLeft size={20} /></button>
-            <button onClick={goToCurrent} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">Hôm nay</button>
-            <button onClick={goToNext} className="p-2 hover:bg-gray-100 rounded-lg transition"><ChevronRight size={20} /></button>
-          </div>
-          <span className="text-xl font-bold text-gray-800">{toolbar.label}</span>
-          <div className="flex bg-gray-100 rounded-lg overflow-hidden shadow-sm">
-            {["month", "day"].map((view) => (
-              <button
-                key={view}
-                onClick={() => toolbar.onView(view)}
-                className={`px-4 py-2 text-sm font-medium transition ${toolbar.view === view ? "bg-blue-600 text-white" : "hover:bg-gray-200 text-gray-700"}`}
-              >
-                {view === "month" && "Tháng"}
-                {view === "day" && "Ngày"}
-              </button>
-            ))}
-          </div>
+const CustomToolbar = (toolbar) => {
+  const goToBack = () => toolbar.onNavigate("PREV");
+  const goToNext = () => toolbar.onNavigate("NEXT");
+  const goToCurrent = () => toolbar.onNavigate("TODAY");
+  return (
+    <div className="rbc-toolbar mb-5 bg-white px-4 py-4 rounded-t-xl border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button onClick={goToBack} className="p-2 hover:bg-gray-100 rounded-lg transition"><ChevronLeft size={20} /></button>
+          <button onClick={goToCurrent} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">Hôm nay</button>
+          <button onClick={goToNext} className="p-2 hover:bg-gray-100 rounded-lg transition"><ChevronRight size={20} /></button>
+        </div>
+        {/* THAY ĐỔI Ở ĐÂY: Chỉ hiển thị ngày được chọn */}
+        <span className="text-xl font-bold text-gray-800">
+          {format(calendarDate, 'dd/MM/yyyy')}
+        </span>
+        <div className="flex bg-gray-100 rounded-lg overflow-hidden shadow-sm">
+          {["month", "day"].map((view) => (
+            <button
+              key={view}
+              onClick={() => toolbar.onView(view)}
+              className={`px-4 py-2 text-sm font-medium transition ${toolbar.view === view ? "bg-blue-600 text-white" : "hover:bg-gray-200 text-gray-700"}`}
+            >
+              {view === "month" && "Tháng"}
+              {view === "day" && "Ngày"}
+            </button>
+          ))}
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   if (loading) {
     return (
