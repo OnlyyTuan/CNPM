@@ -9,6 +9,12 @@ const { verifyToken } = require("../middleware/authMiddleware");
 // Routes mới cho tài xế - chỉ xem xe và học sinh của mình
 router.get("/my/buses", verifyToken, driverController.getMyBuses);
 router.get("/my/students", verifyToken, driverController.getMyStudents);
+// Tài xế cập nhật trạng thái học sinh (đã đón / đã tới)
+router.put(
+  "/my/students/:id/status",
+  verifyToken,
+  driverController.updateStudentStatus
+);
 
 // Lấy danh sách tài xế chưa có xe (phải đặt trước route /)
 router.get("/available", driverController.getAvailableDrivers);

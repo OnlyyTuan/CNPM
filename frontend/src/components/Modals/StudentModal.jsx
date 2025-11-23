@@ -396,6 +396,7 @@ const StudentModal = ({ isOpen, onClose, student, onSave, buses }) => {
               <option value="WAITING">Đang chờ</option>
               <option value="IN_BUS">Trên xe</option>
               <option value="ABSENT">Vắng mặt</option>
+              <option value="ARRIVED">Đã tới</option>
             </select>
           </div>
 
