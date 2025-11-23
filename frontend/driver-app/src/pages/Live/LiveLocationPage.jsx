@@ -9,7 +9,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Sửa icon mặc định của Leaflet cho phù hợp Vite bundler
+// Sửa icon mặc định của Leaflet cho phù hợp Vite bundler    
 const DefaultIcon = L.icon({
   iconUrl: new URL('leaflet/dist/images/marker-icon.png', import.meta.url).toString(),
   iconRetinaUrl: new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).toString(),
@@ -32,20 +32,29 @@ const speedToColor = (speed) => {
 
 const getSpeedIcon = (speed) => {
   const color = speedToColor(speed);
-  // DivIcon hình tròn có viền, dễ nhìn trên map
+  // Icon xe bus với z-index cao để đè lên điểm dừng
   const html = `
     <span style="
       display:inline-block;
-      width:18px; height:18px;
-      border-radius:50%;
-      background:${color};
+      width:22px; height:22px;
+      background-color:${color};
+      border-radius:3px;
       border:2px solid white;
       box-shadow:0 0 0 2px rgba(0,0,0,0.25);
-    "></span>`;
-  return L.divIcon({ className: '', html, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10] });
+      font-size:14px;
+      font-weight:bold;
+      color:white;
+      text-align:center;
+      line-height:18px;
+      z-index:1000;
+    ">🚌</span>`;
+  return L.divIcon({ className: '', html, iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -12] });
 };
 
 // Component phụ để tự động fitBounds lần đầu
+//Dùng để khi load danh sách tuyến/xe/trạm lần đầu, 
+// bản đồ tự động phóng to vừa đủ bao hết các điểm, 
+// mà không bị zoom liên tục khi dữ liệu cập nhật sau đó.
 const FitBoundsOnce = ({ points }) => {
   const map = useMap();
   const [hasFit, setHasFit] = useState(false);
@@ -250,10 +259,11 @@ const LiveLocationPage = () => {
             {stops.map((stop) => {
               const stopIcon = L.divIcon({
                 className: '',
-                html: '<div style="font-size:24px;">🚏</div>',
-                iconSize: [24, 24],
-                iconAnchor: [12, 24],
-                popupAnchor: [0, -24],
+                html: '<div style="font-size:16px; opacity:0.7;">🚏</div>',
+                iconSize: [16, 16],
+                iconAnchor: [8, 16],
+                popupAnchor: [0, -16],
+                zIndexOffset: -100, // Đặt z-index thấp để xe đè lên
               });
               
               return (

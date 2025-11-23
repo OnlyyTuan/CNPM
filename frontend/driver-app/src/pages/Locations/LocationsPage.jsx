@@ -6,7 +6,7 @@ import { Search, Plus, Edit, Trash2, MapPin, X } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../config/api.config";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -39,6 +39,7 @@ const LocationsPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [mapPosition, setMapPosition] = useState(null);
+  const [routes, setRoutes] = useState({}); // {routeId: {waypoints: [...], color: ...}}
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -48,7 +49,34 @@ const LocationsPage = () => {
 
   useEffect(() => {
     fetchLocations();
+    loadRoutes();
   }, []);
+
+  const loadRoutes = async () => {
+    try {
+      const routeIds = ['R001', 'R002'];
+      const routeColors = ['#3b82f6', '#10b981']; // xanh dương, xanh lá
+      const routeData = {};
+      
+      for (let i = 0; i < routeIds.length; i++) {
+        const routeId = routeIds[i];
+        try {
+          const response = await axios.get(`${API_ENDPOINTS.ROUTES}/${routeId}/waypoints`);
+          const data = response.data;
+          routeData[routeId] = {
+            waypoints: data.waypoints || [],
+            routeName: data.routeName || routeId,
+            color: routeColors[i],
+          };
+        } catch (err) {
+          console.warn(`Không tải được route ${routeId}:`, err);
+        }
+      }
+      setRoutes(routeData);
+    } catch (err) {
+      console.error('Lỗi khi load routes:', err);
+    }
+  };
 
   useEffect(() => {
     const term = searchTerm.toLowerCase();
@@ -425,7 +453,7 @@ const LocationsPage = () => {
                     Vị trí trên bản đồ
                   </label>
                   <p className="text-xs text-gray-500 mb-2">
-                    Nhấp vào bản đồ để chọn vị trí điểm dừng
+                    Nhấp vào bản đồ để chọn vị trí điểm dừng (hiển thị tuyến R001, R002)
                   </p>
                   <div className="h-[500px] rounded-lg overflow-hidden border-2 border-gray-300">
                     <MapContainer
@@ -437,6 +465,25 @@ const LocationsPage = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
+                      
+                      {/* Hiển thị tuyến đường R001 và R002 */}
+                      {Object.entries(routes).map(([routeId, routeInfo]) => {
+                        const { waypoints, color, routeName } = routeInfo;
+                        if (!waypoints || waypoints.length === 0) return null;
+                        const positions = waypoints.map(wp => [wp.latitude, wp.longitude]);
+                        
+                        return (
+                          <React.Fragment key={routeId}>
+                            <Polyline
+                              positions={positions}
+                              color={color}
+                              weight={3}
+                              opacity={0.6}
+                            />
+                          </React.Fragment>
+                        );
+                      })}
+                      
                       <LocationMarker position={mapPosition} setPosition={setMapPosition} />
                     </MapContainer>
                   </div>
