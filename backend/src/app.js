@@ -17,6 +17,7 @@ const assignmentRoutes = require("./routes/assignmentRoutes");
 const routeRoutes = require("./routes/routeRoutes");
 const featureFlagRoutes = require("./routes/featureFlagRoutes");
 const userRoutes = require("./routes/userRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 // MIDDLEWARE
 app.use(helmet());
@@ -67,6 +68,8 @@ app.use("/api/v1/routes", routeRoutes);
 app.use("/api/v1/feature-flags", featureFlagRoutes);
 // Users (expose basic user management endpoints)
 app.use("/api/v1/users", userRoutes);
+// Chat (admin-driver communication)
+app.use("/api/v1/chat", chatRoutes);
 
 // Health Check Route
 app.get("/api/v1/health", (req, res) => {

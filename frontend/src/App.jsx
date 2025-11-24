@@ -21,6 +21,7 @@ import RoutesPage from "./pages/Routes/RoutesPage";
 import LocationsPage from "./pages/Locations/LocationsPage";
 import LiveLocationPage from "./pages/Live/LiveLocationPage";
 import RouteEdit from "./pages/Routes/RouteEdit";
+import ChatPage from "./pages/Chat/ChatPage";
 
 function App() {
   return (
@@ -80,6 +81,7 @@ function App() {
           <Route path="assignments" element={<AssignmentPage />} />
           <Route path="accounts" element={<AccountManagement />} />
           <Route path="parents" element={<ParentManagement />} />
+          <Route path="chat" element={<ChatPage />} />
         </Route>
       </Routes>
     </Router>
