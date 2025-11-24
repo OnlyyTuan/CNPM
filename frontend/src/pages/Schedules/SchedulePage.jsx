@@ -194,9 +194,15 @@ const ScheduleModal = ({
     !!assignments && assignments.length === 1
   );
   const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
-
+  // RESET FORM KHI MODAL MỞ/ĐÓNG - FIX 100% LỖI NHỚ DỮ LIỆU CŨ
   useEffect(() => {
+    // Chỉ chạy khi modal đang mở
+    if (!isOpen) {
+      return;
+    }
+
     if (schedule) {
+      // ĐANG SỬA → điền dữ liệu từ schedule
       setFormData({
         bus_id: schedule.bus_id || "",
         route_id: schedule.route_id || "",
@@ -213,6 +219,7 @@ const ScheduleModal = ({
         status: schedule.status || "PLANNED",
       });
     } else {
+      // ĐANG THÊM MỚI → reset trắng
       setFormData({
         bus_id: "",
         route_id: "",
@@ -220,18 +227,23 @@ const ScheduleModal = ({
         end_time: "",
         status: "PLANNED",
       });
-      if (assignments && assignments.length === 1) {
-        const a = assignments[0];
-        setSelectedAssignmentId(a.bus_id || a.busId || a.id || "");
-        setUseAssignment(true);
-        setFormData((s) => ({
-          ...s,
-          bus_id: a.bus_id || a.busId || a.id,
-          route_id: a.route_id || a.routeId || a.route_id,
-        }));
-      }
     }
-  }, [schedule, assignments]);
+
+    // Xử lý assignment tự động nếu chỉ có 1 cái (giữ nguyên logic cũ)
+    if (assignments && assignments.length === 1) {
+      const a = assignments[0];
+      setSelectedAssignmentId(a.bus_id || a.busId || a.id || "");
+      setUseAssignment(true);
+      setFormData((prev) => ({
+        ...prev,
+        bus_id: a.bus_id || a.busId || a.id || prev.bus_id,
+        route_id: a.route_id || a.routeId || a.route_id || prev.route_id,
+      }));
+    } else {
+      setUseAssignment(false);
+      setSelectedAssignmentId("");
+    }
+  }, [isOpen, schedule, assignments]); // Thêm isOpen vào đây là quan trọng nhất!
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -256,217 +268,195 @@ const ScheduleModal = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {assignments && assignments.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dùng phân công hiện có
-              </label>
-              <div className="flex items-center space-x-3">
-                <select
-                  value={selectedAssignmentId}
-                  onChange={(e) => {
-                    if (readOnly) return;
-                    const sel = e.target.value;
-                    setSelectedAssignmentId(sel);
-                    setUseAssignment(!!sel);
-                    const a = assignments.find(
-                      (x) => String(x.bus_id || x.busId || x.id) === String(sel)
-                    );
-                    if (a) {
-                      setFormData((s) => ({
-                        ...s,
-                        bus_id: a.bus_id || a.busId || a.id,
-                        route_id: a.route_id || a.routeId || a.route_id,
-                      }));
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  disabled={readOnly}
-                >
-                  <option value="">-- Chọn phân công (tùy chọn) --</option>
-                  {assignments.map((a) => (
-                    <option
-                      key={a.bus_id || a.id}
-                      value={a.bus_id || a.busId || a.id}
-                    >
-                      {a.license_plate || a.bus_license || `${a.bus_id || a.id}`} -{" "}
-                      {a.route_name || a.route_name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (readOnly) return;
-                    setSelectedAssignmentId("");
-                    setUseAssignment(false);
-                    setFormData((s) => ({ ...s, bus_id: "", route_id: "" }));
-                  }}
-                  className="px-3 py-2 border rounded text-sm whitespace-nowrap"
-                  disabled={readOnly}
-                >
-                  Bỏ chọn
-                </button>
-              </div>
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="space-y-5">
 
-          {!useAssignment && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Xe buýt <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.bus_id}
-                  onChange={(e) => {
-                    if (readOnly) return;
-                    setFormData({ ...formData, bus_id: e.target.value });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                  disabled={readOnly}
-                >
-                  <option value="">Chọn xe buýt</option>
-                  {buses.map((bus) => (
-                    <option key={bus.id} value={bus.id}>
-                      {bus.license_plate} - {bus.capacity} chỗ
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tuyến đường <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.route_id}
-                  onChange={(e) => {
-                    if (readOnly) return;
-                    setFormData({ ...formData, route_id: e.target.value });
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                  disabled={readOnly}
-                >
-                  <option value="">Chọn tuyến đường</option>
-                  {routes.map((route) => (
-                    <option key={route.id} value={route.id}>
-                      {route.route_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Thời gian bắt đầu <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="datetime-local"
-              value={formData.start_time}
-              onChange={(e) => {
-                if (readOnly) return;
-                setFormData({ ...formData, start_time: e.target.value });
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-              disabled={readOnly}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Thời gian kết thúc <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="datetime-local"
-              value={formData.end_time}
-              onChange={(e) => {
-                if (readOnly) return;
-                setFormData({ ...formData, end_time: e.target.value });
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-              disabled={readOnly}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Trạng thái
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => {
-                if (readOnly) return;
-                setFormData({ ...formData, status: e.target.value });
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={readOnly}
+  {/* ==================== DÙNG PHÂN CÔNG HIỆN CÓ ==================== */}
+  {assignments && assignments.length > 0 && (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Dùng phân công hiện có
+      </label>
+      <div className="flex items-center space-x-3">
+        <select
+          value={selectedAssignmentId}
+          onChange={(e) => {
+            if (readOnly) return;
+            const sel = e.target.value;
+            setSelectedAssignmentId(sel);
+            setUseAssignment(!!sel);
+            const a = assignments.find(
+              (x) => String(x.bus_id || x.busId || x.id) === String(sel)
+            );
+            if (a) {
+              setFormData((s) => ({
+                ...s,
+                bus_id: a.bus_id || a.busId || a.id,
+                route_id: a.route_id || a.routeId || a.route_id,
+              }));
+            }
+          }}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={readOnly}
+        >
+          <option value="">-- Chọn phân công (tùy chọn) --</option>
+          {assignments.map((a) => (
+            <option
+              key={a.bus_id || a.id}
+              value={a.bus_id || a.busId || a.id}
             >
-              <option value="PLANNED">Đã lên kế hoạch</option>
-              <option value="ONGOING">Đang diễn ra</option>
-              <option value="COMPLETED">Hoàn thành</option>
-              <option value="CANCELED">Đã hủy</option>
-            </select>
-          </div>
+              {a.license_plate || a.bus_license || a.bus_id || a.id} -{" "}
+              {a.route_name || "Tuyến không tên"}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => {
+            if (readOnly) return;
+            setSelectedAssignmentId("");
+            setUseAssignment(false);
+            setFormData((s) => ({ ...s, bus_id: "", route_id: "" }));
+          }}
+          className="px-3 py-2 border rounded text-sm whitespace-nowrap hover:bg-gray-100"
+          disabled={readOnly}
+        >
+          Xóa chọn
+        </button>
+      </div>
+    </div>
+  )}
 
-          <div className="flex space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              {readOnly ? "Đóng" : "Hủy"}
-            </button>
-            {!readOnly && (
-              <button
-                type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {schedule ? "Cập nhật" : "Thêm mới"}
-              </button>
-            )}
-          </div>
-        </form>
+  {/* ==================== XE BUÝT & TUYẾN ĐƯỜNG ==================== */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Xe buýt <span className="text-red-500">*</span>
+      </label>
+      <select
+        value={formData.bus_id}
+        onChange={(e) => setFormData({ ...formData, bus_id: e.target.value })}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+        disabled={readOnly}
+      >
+        <option value="">-- Chọn xe buýt --</option>
+        {buses.map((bus) => (
+          <option key={bus.id} value={bus.id}>
+            {bus.license_plate} ({bus.capacity} chỗ)
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Tuyến đường <span className="text-red-500">*</span>
+      </label>
+      <select
+        value={formData.route_id}
+        onChange={(e) => setFormData({ ...formData, route_id: e.target.value })}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+        disabled={readOnly}
+      >
+        <option value="">-- Chọn tuyến đường --</option>
+        {routes.map((route) => (
+          <option key={route.id} value={route.id}>
+            {route.route_name}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  {/* ==================== THỜI GIAN BẮT ĐẦU & KẾT THÚC ==================== */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Thời gian bắt đầu <span className="text-red-500">*</span>
+      </label>
+      <input
+        type="datetime-local"
+        value={formData.start_time}
+        onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+        disabled={readOnly}
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Thời gian kết thúc <span className="text-red-500">*</span>
+      </label>
+      <input
+        type="datetime-local"
+        value={formData.end_time}
+        onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+        disabled={readOnly}
+      />
+    </div>
+  </div>
+
+  {/* THÔNG BÁO LỖI THỜI GIAN */}
+  {formData.start_time && formData.end_time && new Date(formData.start_time) >= new Date(formData.end_time) && (
+    <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2">
+      <span>Lỗi: Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc!</span>
+    </div>
+  )}
+
+  {/* ==================== TRẠNG THÁI ==================== */}
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+    <select
+      value={formData.status}
+      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      disabled={readOnly}
+    >
+      <option value="PLANNED">Đã lên kế hoạch</option>
+      <option value="ONGOING">Đang diễn ra</option>
+      <option value="COMPLETED">Hoàn thành</option>
+      <option value="CANCELED">Đã hủy</option>
+    </select>
+  </div>
+
+  {/* ==================== NÚT HÀNH ĐỘNG ==================== */}
+  <div className="flex gap-3 pt-4">
+    <button
+      type="button"
+      onClick={onClose}
+      className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition"
+    >
+      {readOnly ? "Đóng" : "Hủy"}
+    </button>
+
+    {!readOnly && (
+      <button
+        type="submit"
+        disabled={
+          !formData.bus_id ||
+          !formData.route_id ||
+          !formData.start_time ||
+          !formData.end_time ||
+          new Date(formData.start_time) >= new Date(formData.end_time)
+        }
+        className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+      >
+        {schedule ? "Cập nhật lịch trình" : "Thêm lịch trình mới"}
+      </button>
+    )}
+  </div>
+</form>
       </div>
     </div>
   );
 };
 
 // ==================== Modal Xác nhận Xóa ====================
-const DeleteConfirmModal = ({ isOpen, onClose, onConfirm }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Xác nhận xóa</h3>
-        <p className="text-gray-600 mb-6">
-          Bạn có chắc chắn muốn xóa lịch trình này không? Hành động này không thể hoàn tác.
-        </p>
-        <div className="flex space-x-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-          >
-            Hủy
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-          >
-            Xóa
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+
 
 // ==================== Component Chính ====================
 const SchedulePage = () => {
@@ -481,9 +471,7 @@ const SchedulePage = () => {
   const [selectedRouteId, setSelectedRouteId] = useState("ALL");
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [scheduleToDelete, setScheduleToDelete] = useState(null);
 
   // Calendar state for view switching
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -569,25 +557,6 @@ const SchedulePage = () => {
     setModalOpen(true);
   };
 
-  const handleDeleteClick = (schedule) => {
-    setScheduleToDelete(schedule);
-    setDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    try {
-      const response = await deleteSchedule(scheduleToDelete.id);
-      if (response.success) {
-        toast.success("Xóa lịch trình thành công");
-        fetchData();
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Không thể xóa lịch trình");
-    } finally {
-      setDeleteModalOpen(false);
-      setScheduleToDelete(null);
-    }
-  };
 
   const handleSaveSchedule = async (formData) => {
     try {
@@ -641,67 +610,65 @@ const SchedulePage = () => {
           </div>
         </div>
         <div className="flex gap-2 ml-4">
-          <button onClick={() => {
-            setModalOpen(false);
-            setSelectedSchedule(null);
-            setNewViewModalOpen(true);
-            setNewViewSchedule(schedule);
-          }} className="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs font-bold">Xem</button>
-          <button onClick={() => {
-            setNewViewModalOpen(false);
-            setNewViewSchedule(null);
-            setSelectedSchedule(schedule);
-            setModalOpen(true);
-          }} className="px-2 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500 text-xs">Sửa</button>
-          <button onClick={() => handleDeleteClick(schedule)} className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs">Xóa</button>
-        </div>
-      </div>
-    );
-        {/* Modal xem mới hoàn toàn - render ngoài cùng, không nằm trong event */}
-        {newViewModalOpen && newViewSchedule && (
-          <NewViewScheduleModal
-            isOpen={true}
-            onClose={() => {
+          <button 
+            onClick={() => {
+              setNewViewModalOpen(true);
+              setNewViewSchedule(schedule);
+            }} 
+            className="px-2 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-xs font-bold"
+          >
+            Xem
+          </button>
+          <button 
+            onClick={() => {
               setNewViewModalOpen(false);
               setNewViewSchedule(null);
-            }}
-            schedule={newViewSchedule}
-            buses={buses}
-            routes={routes}
-          />
-        )}
-  };
-
-  // Toolbar: chỉ còn Tháng, Ngày, Danh sách
-  const CustomToolbar = (toolbar) => {
-    const goToBack = () => toolbar.onNavigate("PREV");
-    const goToNext = () => toolbar.onNavigate("NEXT");
-    const goToCurrent = () => toolbar.onNavigate("TODAY");
-    return (
-      <div className="rbc-toolbar mb-5 bg-white px-4 py-4 rounded-t-xl border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3">
-            <button onClick={goToBack} className="p-2 hover:bg-gray-100 rounded-lg transition"><ChevronLeft size={20} /></button>
-            <button onClick={goToCurrent} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">Hôm nay</button>
-            <button onClick={goToNext} className="p-2 hover:bg-gray-100 rounded-lg transition"><ChevronRight size={20} /></button>
-          </div>
-          <span className="text-xl font-bold text-gray-800">{toolbar.label}</span>
-          <div className="flex bg-gray-100 rounded-lg overflow-hidden shadow-sm">
-            {["month", "day"].map((view) => (
-              <button
-                key={view}
-                onClick={() => toolbar.onView(view)}
-                className={`px-4 py-2 text-sm font-medium transition ${toolbar.view === view ? "bg-blue-600 text-white" : "hover:bg-gray-200 text-gray-700"}`}
-              >
-                {view === "month" && "Tháng"}
-                {view === "day" && "Ngày"}
-              </button>
-            ))}
-          </div>
+              setSelectedSchedule(schedule);
+              setModalOpen(true);
+            }} 
+            className="px-2 py-1 bg-yellow-400 text-white rounded hover:bg-yellow-500 text-xs"
+          >
+            Sửa
+          </button>
+          {/* ĐÃ XÓA NÚT XÓA Ở ĐÂY */}
         </div>
       </div>
     );
   };
+
+// Toolbar: chỉ còn Tháng, Ngày, Danh sách
+const CustomToolbar = (toolbar) => {
+  const goToBack = () => toolbar.onNavigate("PREV");
+  const goToNext = () => toolbar.onNavigate("NEXT");
+  const goToCurrent = () => toolbar.onNavigate("TODAY");
+  return (
+    <div className="rbc-toolbar mb-5 bg-white px-4 py-4 rounded-t-xl border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button onClick={goToBack} className="p-2 hover:bg-gray-100 rounded-lg transition"><ChevronLeft size={20} /></button>
+          <button onClick={goToCurrent} className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-sm">Hôm nay</button>
+          <button onClick={goToNext} className="p-2 hover:bg-gray-100 rounded-lg transition"><ChevronRight size={20} /></button>
+        </div>
+        {/* THAY ĐỔI Ở ĐÂY: Chỉ hiển thị ngày được chọn */}
+        <span className="text-xl font-bold text-gray-800">
+          {format(calendarDate, 'dd/MM/yyyy')}
+        </span>
+        <div className="flex bg-gray-100 rounded-lg overflow-hidden shadow-sm">
+          {["month", "day"].map((view) => (
+            <button
+              key={view}
+              onClick={() => toolbar.onView(view)}
+              className={`px-4 py-2 text-sm font-medium transition ${toolbar.view === view ? "bg-blue-600 text-white" : "hover:bg-gray-200 text-gray-700"}`}
+            >
+              {view === "month" && "Tháng"}
+              {view === "day" && "Ngày"}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
   if (loading) {
     return (
@@ -792,18 +759,15 @@ const SchedulePage = () => {
 
       <ScheduleModal
         isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedSchedule(null);
+        }}
         schedule={selectedSchedule}
         onSave={handleSaveSchedule}
         buses={buses}
         routes={routes}
         assignments={assignments}
-      />
-
-      <DeleteConfirmModal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
       />
     </div>
   );
