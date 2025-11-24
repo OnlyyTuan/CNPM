@@ -175,11 +175,62 @@ class AssignmentController {
         });
       }
 
-      // Cập nhật phân công
-      await db.query("UPDATE bus SET route_id = ? WHERE id = ?", [
-        cleanRouteId,
-        cleanBusId,
-      ]);
+      // Lấy điểm đầu tiên của tuyến đường từ route_waypoint
+      const [waypoints] = await db.query(
+        "SELECT latitude, longitude FROM route_waypoint WHERE route_id = ? ORDER BY sequence ASC LIMIT 1",
+        [cleanRouteId]
+      );
+
+      console.log(`[assignBusToRoute] Found ${waypoints.length} waypoints for route ${cleanRouteId}`);
+
+      let currentLocationId = buses[0].current_location_id;
+
+      // Nếu tìm thấy waypoint đầu tiên, cập nhật vị trí xe
+      if (waypoints.length > 0) {
+        const firstWaypoint = waypoints[0];
+        console.log(`[assignBusToRoute] First waypoint: lat=${firstWaypoint.latitude}, lng=${firstWaypoint.longitude}`);
+        
+        // Tạo hoặc cập nhật current_location cho bus
+        currentLocationId = `CUR_${cleanBusId}`;
+        
+        console.log(`[assignBusToRoute] Setting current_location_id to ${currentLocationId} at (${firstWaypoint.latitude}, ${firstWaypoint.longitude})`);
+        
+        // Kiểm tra xem location đã tồn tại chưa
+        const [existingLoc] = await db.query(
+          "SELECT id FROM location WHERE id = ?",
+          [currentLocationId]
+        );
+
+        if (existingLoc.length === 0) {
+          // Tạo mới location
+          console.log(`[assignBusToRoute] Creating new location ${currentLocationId}`);
+          await db.query(
+            "INSERT INTO location (id, name, latitude, longitude, type) VALUES (?, ?, ?, ?, ?)",
+            [
+              currentLocationId,
+              `Current location of ${cleanBusId}`,
+              firstWaypoint.latitude,
+              firstWaypoint.longitude,
+              "bus_current"
+            ]
+          );
+        } else {
+          // Cập nhật location hiện có
+          console.log(`[assignBusToRoute] Updating existing location ${currentLocationId}`);
+          await db.query(
+            "UPDATE location SET latitude = ?, longitude = ? WHERE id = ?",
+            [firstWaypoint.latitude, firstWaypoint.longitude, currentLocationId]
+          );
+        }
+      } else {
+        console.warn(`[assignBusToRoute] No waypoints found for route ${cleanRouteId}, bus will have no location`);
+      }
+
+      // Cập nhật phân công xe với route và current_location
+      await db.query(
+        "UPDATE bus SET route_id = ?, current_location_id = ?, speed = 0 WHERE id = ?",
+        [cleanRouteId, currentLocationId, cleanBusId]
+      );
 
       res.status(200).json({
         success: true,
