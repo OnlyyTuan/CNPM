@@ -9,7 +9,7 @@ import {
   Trash2,
   Bus as BusIcon,
   Eye,
-  UserPlus,
+  Bell,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -20,6 +20,7 @@ import {
   createBus,
 } from "../../api/busApi";
 import { getAvailableDrivers, getAllDrivers } from "../../api/driverApi";
+import notificationApi from "../../api/notificationApi";
 import AddBusModal from "../../components/Buses/AddBusModal";
 import { emitEntityChange } from "../../utils/eventBus";
 
@@ -38,22 +39,24 @@ const BusesPage = () => {
   const [selectedDriverId, setSelectedDriverId] = useState("");
   const [driversMap, setDriversMap] = useState({});
 
+  // Notification Modal State
+  const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
+  const [notifyTitle, setNotifyTitle] = useState("");
+  const [notifyMessage, setNotifyMessage] = useState("");
+  const [sendingNotify, setSendingNotify] = useState(false);
+
   useEffect(() => {
     fetchBuses();
   }, []);
 
   useEffect(() => {
     let filtered = buses;
-
     const q = searchTerm.trim().toLowerCase();
 
-    // Lọc theo tìm kiếm (biển số, mã xe hoặc tên/tên đầy đủ tài xế)
     if (q) {
       filtered = filtered.filter((bus) => {
         const byPlate = (bus.license_plate || "").toLowerCase().includes(q);
         const byId = (bus.id || "").toLowerCase().includes(q);
-
-        // Tìm theo tên tài xế (dựa vào driversMap)
         let byDriver = false;
         if (bus.driver_id && driversMap[bus.driver_id]) {
           const d = driversMap[bus.driver_id];
@@ -65,28 +68,23 @@ const BusesPage = () => {
             "";
           byDriver = String(driverName).toLowerCase().includes(q);
         }
-
         return byPlate || byId || byDriver;
       });
     }
 
-    // Lọc theo trạng thái
     if (filterStatus !== "ALL") {
       filtered = filtered.filter((bus) => bus.status === filterStatus);
     }
-
     setFilteredBuses(filtered);
   }, [searchTerm, filterStatus, buses, driversMap]);
 
   const fetchBuses = async () => {
     try {
       setLoading(true);
-      // Fetch buses and drivers so we can show driver name + id
       const [data, drivers] = await Promise.all([
         getAllBuses(),
         getAllDrivers(),
       ]);
-      console.log("Bus data:", data);
       setBuses(data);
       setFilteredBuses(data);
 
@@ -109,7 +107,6 @@ const BusesPage = () => {
     if (!window.confirm("Bạn có chắc muốn xóa xe buýt này?")) {
       return;
     }
-
     try {
       await deleteBus(id);
       toast.success("Xóa xe buýt thành công");
@@ -124,7 +121,6 @@ const BusesPage = () => {
   const handleAddBus = async (busData) => {
     try {
       const created = await createBus(busData);
-      // If a driver was selected at creation, assign after bus is created
       if (busData.driver_id) {
         try {
           await assignDriverToBus(created.id, busData.driver_id);
@@ -152,7 +148,6 @@ const BusesPage = () => {
     setSelectedBus(bus);
     try {
       const drivers = await getAvailableDrivers();
-      // Thêm tài xế hiện tại của xe (nếu có) vào danh sách
       setAvailableDrivers(drivers);
       setIsEditModalOpen(true);
     } catch (error) {
@@ -164,16 +159,9 @@ const BusesPage = () => {
 
   const handleUpdateBus = async (busData) => {
     try {
-      console.log("handleUpdateBus: updating", {
-        id: selectedBus?.id,
-        busData,
-      });
-      // If driver_id present, call assign endpoint to keep driver<->bus in sync
       if (Object.prototype.hasOwnProperty.call(busData, "driver_id")) {
         const driverId = busData.driver_id || null;
-        // call assign API first
         await assignDriverToBus(selectedBus.id, driverId);
-        // remove driver_id so updateBus doesn't try to set it again
         const { driver_id, ...other } = busData;
         if (Object.keys(other).length > 0) {
           await updateBus(selectedBus.id, other);
@@ -192,7 +180,6 @@ const BusesPage = () => {
         error.response?.data?.message ||
         error.response?.data?.error ||
         "Không thể cập nhật xe buýt";
-      console.error("Backend response:", error.response?.data);
       toast.error(errorMsg);
     }
   };
@@ -214,7 +201,6 @@ const BusesPage = () => {
       toast.error("Vui lòng chọn tài xế");
       return;
     }
-
     try {
       await assignDriverToBus(selectedBus.id, selectedDriverId);
       toast.success("Gán tài xế thành công!");
@@ -229,6 +215,45 @@ const BusesPage = () => {
     }
   };
 
+  // Notification Handlers
+  const handleOpenNotifyModal = (bus) => {
+    setSelectedBus(bus);
+    setNotifyTitle(`Thông báo xe ${bus.license_plate}`);
+    setNotifyMessage("");
+    setIsNotifyModalOpen(true);
+  };
+
+  const handleSendNotification = async () => {
+    if (!notifyTitle.trim() || !notifyMessage.trim()) {
+      toast.error("Vui lòng nhập tiêu đề và nội dung");
+      return;
+    }
+
+    setSendingNotify(true);
+    try {
+      const result = await notificationApi.sendToBus({
+        busId: selectedBus.id,
+        title: notifyTitle,
+        message: notifyMessage,
+      });
+
+      if (result.success) {
+        toast.success(result.message);
+        setIsNotifyModalOpen(false);
+        setNotifyTitle("");
+        setNotifyMessage("");
+        setSelectedBus(null);
+      } else {
+        toast.error(result.message || "Gửi thất bại");
+      }
+    } catch (error) {
+      console.error("Error sending notification:", error);
+      toast.error(error.response?.data?.message || "Lỗi khi gửi thông báo");
+    } finally {
+      setSendingNotify(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -239,7 +264,6 @@ const BusesPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Quản lý Xe buýt</h2>
@@ -265,7 +289,6 @@ const BusesPage = () => {
         </button>
       </div>
 
-      {/* Add Bus Modal */}
       <AddBusModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -273,7 +296,6 @@ const BusesPage = () => {
         availableDrivers={availableDrivers}
       />
 
-      {/* Search and Filter */}
       <div className="bg-white rounded-xl shadow-md p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2 relative">
@@ -302,7 +324,6 @@ const BusesPage = () => {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4">
           <p className="text-sm text-gray-600">Tổng số xe</p>
@@ -328,7 +349,6 @@ const BusesPage = () => {
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -434,6 +454,13 @@ const BusesPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button
+                        onClick={() => handleOpenNotifyModal(bus)}
+                        className="text-purple-600 hover:text-purple-900"
+                        title="Gửi thông báo cho phụ huynh"
+                      >
+                        <Bell size={18} />
+                      </button>
+                      <button
                         onClick={() => handleViewBus(bus)}
                         className="text-blue-600 hover:text-blue-900"
                         title="Xem chi tiết"
@@ -469,7 +496,6 @@ const BusesPage = () => {
         </div>
       )}
 
-      {/* Modal Xem Chi Tiết */}
       {isViewModalOpen && selectedBus && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-full">
@@ -542,7 +568,6 @@ const BusesPage = () => {
         </div>
       )}
 
-      {/* Modal Sửa Xe buýt */}
       {isEditModalOpen && selectedBus && (
         <AddBusModal
           isOpen={isEditModalOpen}
@@ -556,7 +581,6 @@ const BusesPage = () => {
         />
       )}
 
-      {/* Modal Gán Tài xế */}
       {isAssignDriverModalOpen && selectedBus && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96 max-w-full">
@@ -603,6 +627,75 @@ const BusesPage = () => {
                 disabled={!selectedDriverId}
               >
                 Gán tài xế
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Modal */}
+      {isNotifyModalOpen && selectedBus && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-gray-800 flex items-center">
+              <Bell className="mr-2 text-purple-600" />
+              Gửi thông báo cho Phụ huynh
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Xe buýt: <span className="font-semibold">{selectedBus.license_plate}</span>
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tiêu đề
+                </label>
+                <input
+                  type="text"
+                  value={notifyTitle}
+                  onChange={(e) => setNotifyTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Ví dụ: Thông báo xe đến muộn"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nội dung
+                </label>
+                <textarea
+                  value={notifyMessage}
+                  onChange={(e) => setNotifyMessage(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 h-32 resize-none"
+                  placeholder="Nhập nội dung thông báo..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end mt-6 space-x-3">
+              <button
+                onClick={() => {
+                  setIsNotifyModalOpen(false);
+                  setSelectedBus(null);
+                }}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium text-gray-700"
+                disabled={sendingNotify}
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleSendNotification}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium flex items-center"
+                disabled={sendingNotify}
+              >
+                {sendingNotify ? (
+                   <>
+                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                     Đang gửi...
+                   </>
+                ) : (
+                   "Gửi thông báo"
+                )}
               </button>
             </div>
           </div>
