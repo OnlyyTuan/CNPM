@@ -374,7 +374,10 @@ const driverController = {
       }
 
       // Tìm student và đảm bảo student.assigned_bus_id thuộc về busIds
-      const student = await db.Student.findOne({ where: { id: studentId } });
+      const student = await db.Student.findOne({ 
+        where: { id: studentId },
+        include: [{ model: db.Parent, as: 'Parent' }]
+      });
       if (!student) {
         return res
           .status(404)
@@ -394,17 +397,39 @@ const driverController = {
       }
 
       // Thực hiện cập nhật theo action
+      let notifMessage = "";
+      let notifTitle = "Thông báo đưa đón";
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
       if (action === "pickup") {
         await db.Student.update(
           { status: "IN_BUS" },
           { where: { id: studentId } }
         );
+        notifMessage = `Học sinh ${student.name} đã được đón lên xe lúc ${timeString}.`;
       } else if (action === "dropoff") {
         // Khi đã tới nơi, chuyển về WAITING để sẵn sàng cho chuyến tiếp theo
         await db.Student.update(
           { status: "WAITING" },
           { where: { id: studentId } }
         );
+        notifMessage = `Học sinh ${student.name} đã được trả xuống xe an toàn lúc ${timeString}.`;
+      }
+
+      // Tạo thông báo cho phụ huynh nếu có tài khoản
+      if (student.Parent && student.Parent.userId) {
+        try {
+            await db.Notification.create({
+                userId: student.Parent.userId,
+                title: notifTitle,
+                message: notifMessage,
+                type: 'STUDENT_STATUS'
+            });
+            console.log(`🔔 Đã tạo thông báo cho phụ huynh ${student.Parent.id}`);
+        } catch (notifError) {
+            console.error("Lỗi khi tạo thông báo:", notifError);
+        }
       }
 
       return res

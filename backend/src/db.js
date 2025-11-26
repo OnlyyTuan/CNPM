@@ -74,6 +74,7 @@ db.Bus = require("./models/Bus")(sequelize, Sequelize.DataTypes);
 db.Driver = require("./models/Driver")(sequelize, Sequelize.DataTypes);
 db.Student = require("./models/Student")(sequelize, Sequelize.DataTypes);
 db.ChatMessage = require("./models/ChatMessage")(sequelize, Sequelize.DataTypes);
+db.Notification = require("./models/Notification")(sequelize, Sequelize.DataTypes);
 
 // ===================================
 // 3. THIẾT LẬP CÁC QUAN HỆ (ASSOCIATIONS)
@@ -165,6 +166,17 @@ db.ChatMessage.belongsTo(db.User, {
   foreignKey: "receiver_id",
   as: "Receiver",
   onDelete: "CASCADE",
+});
+
+// --- Notification & User ---
+db.User.hasMany(db.Notification, {
+    foreignKey: "user_id",
+    as: "Notifications",
+    onDelete: "CASCADE"
+});
+db.Notification.belongsTo(db.User, {
+    foreignKey: "user_id",
+    as: "User"
 });
 
 // --- Route & RouteWaypoint (Lộ trình và các điểm trên lộ trình) ---
