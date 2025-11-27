@@ -18,6 +18,7 @@ const routeRoutes = require("./routes/routeRoutes");
 const featureFlagRoutes = require("./routes/featureFlagRoutes");
 const userRoutes = require("./routes/userRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 // MIDDLEWARE
 app.use(helmet());
@@ -70,6 +71,8 @@ app.use("/api/v1/feature-flags", featureFlagRoutes);
 app.use("/api/v1/users", userRoutes);
 // Chat (admin-driver communication)
 app.use("/api/v1/chat", chatRoutes);
+// Notifications
+app.use("/api/v1/notifications", notificationRoutes);
 
 // Health Check Route
 app.get("/api/v1/health", (req, res) => {
@@ -108,7 +111,7 @@ app.use((err, req, res, next) => {
 });
 
 const config = require("./config/app.config");
-const PORT = config.PORT || 5000;
+const PORT = config.PORT || 3000;
 
 if (require.main === module) {
   app.listen(PORT, () => {
