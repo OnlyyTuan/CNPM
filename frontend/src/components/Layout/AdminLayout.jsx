@@ -138,7 +138,11 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto bg-gray-50 p-6">
+        <main
+          className={`flex-1 bg-gray-50 ${
+            location.pathname === "/admin/chat" ? "p-0 overflow-hidden" : "p-6 overflow-auto"
+          }`}
+        >
           <Outlet />
         </main>
       </div>

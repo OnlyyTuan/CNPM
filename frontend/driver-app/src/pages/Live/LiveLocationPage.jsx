@@ -3,11 +3,12 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { getLiveBusLocations } from '../../api/busApi';
-import { getRouteWaypoints } from '../../api/routeApi';
+import { getRouteWaypoints, getAllRoutes } from '../../api/routeApi';
 import { getLocations } from '../../api/locationApi';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import RoutingPolyline from '../../components/RoutingPolyline';
 
 // Sửa icon mặc định của Leaflet cho phù hợp Vite bundler    
 const DefaultIcon = L.icon({
@@ -32,23 +33,17 @@ const speedToColor = (speed) => {
 
 const getSpeedIcon = (speed) => {
   const color = speedToColor(speed);
-  // Icon xe bus với z-index cao để đè lên điểm dừng
+  // DivIcon hình tròn có viền, dễ nhìn trên map
   const html = `
     <span style="
       display:inline-block;
-      width:22px; height:22px;
-      background-color:${color};
-      border-radius:3px;
+      width:18px; height:18px;
+      border-radius:50%;
+      background:${color};
       border:2px solid white;
       box-shadow:0 0 0 2px rgba(0,0,0,0.25);
-      font-size:14px;
-      font-weight:bold;
-      color:white;
-      text-align:center;
-      line-height:18px;
-      z-index:1000;
-    ">🚌</span>`;
-  return L.divIcon({ className: '', html, iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -12] });
+    "></span>`;
+  return L.divIcon({ className: '', html, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10] });
 };
 
 // Component phụ để tự động fitBounds lần đầu
@@ -123,20 +118,20 @@ const LiveLocationPage = () => {
   useEffect(() => {
     const loadRoutes = async () => {
       try {
-        // Giả sử bus có route_id, lấy unique route IDs từ bus data
-        // Tạm thời hard-code R001 và R002 để test
-        const routeIds = ['R001', 'R002'];
-        const routeColors = ['#3b82f6', '#10b981']; // xanh dương, xanh lá
+        // Lấy danh sách tất cả các tuyến từ API
+        const allRoutes = await getAllRoutes();
+        const routeColors = ['#3b82f6', '#10b981', '#9333ea', '#ef4444', '#8b5cf6']; // Xanh dương, Xanh lá, Tím, Đỏ, Tím nhạt
         
         const routeData = {};
-        for (let i = 0; i < routeIds.length; i++) {
-          const routeId = routeIds[i];
+        for (let i = 0; i < allRoutes.length; i++) {
+          const route = allRoutes[i];
+          const routeId = route.id;
           try {
             const data = await getRouteWaypoints(routeId);
             routeData[routeId] = {
               waypoints: data.waypoints || [],
-              routeName: data.routeName,
-              color: routeColors[i],
+              routeName: data.routeName || route.route_name,
+              color: routeColors[i % routeColors.length],
             };
           } catch (err) {
             console.warn(`Không tải được route ${routeId}:`, err);
@@ -159,9 +154,14 @@ const LiveLocationPage = () => {
         console.log('🌐 Raw data từ API:', data);
         if (!canceled) {
           const cleaned = Array.isArray(data)
-            ? data.filter((x) => x && x.lat != null && x.lng != null)
+            ? data.filter((x) => {
+                // Lọc xe có tọa độ hợp lệ và status không phải INACTIVE hoặc MAINTENANCE
+                return x && x.lat != null && x.lng != null 
+                  && x.status !== 'INACTIVE' 
+                  && x.status !== 'MAINTENANCE';
+              })
             : [];
-          console.log('📍 Cập nhật vị trí xe:', cleaned);
+          console.log('📍 Cập nhật vị trí xe (đã lọc INACTIVE/MAINTENANCE):', cleaned);
           console.table(cleaned); // Hiển thị dạng bảng để dễ so sánh
           
           // FORCE RE-RENDER bằng cách tạo object hoàn toàn mới với timestamp
@@ -212,25 +212,21 @@ const LiveLocationPage = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            {/* VẼ LỘ TRÌNH CHO TỪNG ROUTE */}
-            {Object.entries(routes).map(([routeId, routeInfo]) => {
+            {/* VẼ LỘ TRÌNH CHO TỪNG ROUTE - Sắp xếp theo thứ tự route_id */}
+            {Object.entries(routes)
+              .sort(([idA], [idB]) => idA.localeCompare(idB)) // R001 < R002 < R003
+              .map(([routeId, routeInfo]) => {
               const { waypoints, color, routeName } = routeInfo;
               if (!waypoints || waypoints.length === 0) return null;
               
-              // Tạo array tọa độ cho Polyline
-              const positions = waypoints.map(wp => [wp.latitude, wp.longitude]);
-              
               return (
                 <React.Fragment key={routeId}>
-                  {/* Đường nối (Polyline) */}
-                  <Polyline
-                    positions={positions}
+                  {/* Đường nối theo đường phố thực tế (OSRM Routing) */}
+                  <RoutingPolyline
+                    waypoints={waypoints}
                     color={color}
-                    weight={4}
-                    opacity={0.7}
-                  >
-                    <Popup>{routeName || routeId}</Popup>
-                  </Polyline>
+                    routeName={routeName || routeId}
+                  />
                   
                   {/* Điểm dừng (Circle) */}
                   {waypoints.filter(wp => wp.is_stop).map(wp => (
@@ -259,11 +255,10 @@ const LiveLocationPage = () => {
             {stops.map((stop) => {
               const stopIcon = L.divIcon({
                 className: '',
-                html: '<div style="font-size:16px; opacity:0.7;">🚏</div>',
-                iconSize: [16, 16],
-                iconAnchor: [8, 16],
-                popupAnchor: [0, -16],
-                zIndexOffset: -100, // Đặt z-index thấp để xe đè lên
+                html: '<div style="font-size:24px;">🚏</div>',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24],
+                popupAnchor: [0, -24],
               });
               
               return (

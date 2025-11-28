@@ -130,7 +130,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-gray-100">
+    <div className="flex h-full bg-gray-100">
       {/* Sidebar - Driver List */}
       <div className="w-1/4 bg-white border-r border-gray-300 overflow-y-auto">
         <div className="p-4 bg-blue-600 text-white">

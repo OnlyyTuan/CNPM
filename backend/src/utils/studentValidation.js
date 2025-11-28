@@ -71,54 +71,13 @@ async function isLocationOnBusRoute(busId, locationId) {
  */
 async function getStopsOnBusRoute(busId) {
   try {
-    const [buses] = await db.query("SELECT route_id FROM bus WHERE id = ?", [
-      busId,
-    ]);
-
-    if (buses.length === 0 || !buses[0].route_id) {
-      return [];
-    }
-
-    const routeId = buses[0].route_id;
-
-    // Lấy stops từ route_waypoint và map với location
-    // Thử truy vấn ghép chính xác trước
-    const [stops] = await db.query(
-      `SELECT DISTINCT l.id, l.name, l.address, rw.latitude, rw.longitude, rw.stop_name, rw.sequence
-       FROM route_waypoint rw
-       JOIN location l ON rw.latitude = l.latitude AND rw.longitude = l.longitude
-       WHERE rw.route_id = ? 
-       AND rw.is_stop = 1
-       ORDER BY rw.sequence`,
-      [routeId]
-    );
-
-    if (stops && stops.length > 0) return stops;
-
-    // Fallback: nếu không tìm thấy kết quả (do precision mismatch hoặc chưa có route_waypoint data),
-    // thử so khớp gần đúng dựa trên ABS diff giữa tọa độ
-    const epsilon = 0.0001;
-    const [approxStops] = await db.query(
-      `SELECT DISTINCT l.id, l.name, l.address, rw.latitude, rw.longitude, rw.stop_name, rw.sequence
-       FROM route_waypoint rw
-       JOIN location l ON ABS(CAST(rw.latitude AS DECIMAL(12,6)) - CAST(l.latitude AS DECIMAL(12,6))) < ?
-         AND ABS(CAST(rw.longitude AS DECIMAL(12,6)) - CAST(l.longitude AS DECIMAL(12,6))) < ?
-       WHERE rw.route_id = ?
-       AND rw.is_stop = 1
-       ORDER BY rw.sequence`,
-      [epsilon, epsilon, routeId]
-    );
-
-    if (approxStops && approxStops.length > 0) return approxStops;
-
-    // Nếu vẫn rỗng (không có route_waypoint), fallback trả về toàn bộ locations
-    // để frontend có thể hiển thị các điểm khả dụng.
+    // Trả về tất cả locations - validation sẽ được thực hiện ở frontend
     const [allLocs] = await db.query(
-      `SELECT id, name, address, latitude, longitude, type FROM location`
+      `SELECT id, name, address, latitude, longitude FROM location ORDER BY name`
     );
     return allLocs || [];
   } catch (error) {
-    console.error("Error getting stops on route:", error);
+    console.error("Error getting locations:", error);
     return [];
   }
 }
@@ -142,50 +101,9 @@ async function validateStudentLocations(
     return { valid: false, errors };
   }
 
-  // If the route has no waypoints defined, skip strict validation to avoid
-  // rejecting valid existing data when route_waypoint is empty in DB.
-  try {
-    const [b] = await db.query("SELECT route_id FROM bus WHERE id = ?", [
-      busId,
-    ]);
-    if (b && b.length > 0 && b[0].route_id) {
-      const routeId = b[0].route_id;
-      const [cnt] = await db.query(
-        "SELECT COUNT(*) as c FROM route_waypoint WHERE route_id = ?",
-        [routeId]
-      );
-      if (cnt && cnt[0] && cnt[0].c === 0) {
-        return { valid: true, errors: [] };
-      }
-    }
-  } catch (e) {
-    // ignore and continue validation normally
-  }
-
-  // Kiểm tra pickup location
-  if (pickupLocationId) {
-    const isValid = await isLocationOnBusRoute(busId, pickupLocationId);
-    if (!isValid) {
-      errors.push(
-        "Điểm đón phải là một điểm dừng trên tuyến của xe bus được phân công"
-      );
-    }
-  }
-
-  // Kiểm tra dropoff location
-  if (dropoffLocationId) {
-    const isValid = await isLocationOnBusRoute(busId, dropoffLocationId);
-    if (!isValid) {
-      errors.push(
-        "Điểm trả phải là một điểm dừng trên tuyến của xe bus được phân công"
-      );
-    }
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
-  };
+  // Tạm thời bỏ validation vì admin có thể chọn bất kỳ location nào
+  // không bắt buộc phải nằm trong route_waypoint
+  return { valid: true, errors: [] };
 }
 
 module.exports = {

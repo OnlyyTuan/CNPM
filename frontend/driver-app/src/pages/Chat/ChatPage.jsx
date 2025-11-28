@@ -146,7 +146,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-full bg-gray-100">
       {/* Sidebar - Admin List */}
       <div className="w-1/4 bg-white border-r border-gray-300 overflow-y-auto">
         <div className="p-4 bg-green-600 text-white">

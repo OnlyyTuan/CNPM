@@ -6,7 +6,7 @@ import { Search, Plus, Edit, Trash2, MapPin, X } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../config/api.config";
-import { MapContainer, TileLayer, Marker, useMapEvents, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -39,7 +39,7 @@ const LocationsPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [mapPosition, setMapPosition] = useState(null);
-  const [routes, setRoutes] = useState({}); // {routeId: {waypoints: [...], color: ...}}
+  const [routes, setRoutes] = useState([]); // Thêm state cho tuyến đường
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -49,34 +49,7 @@ const LocationsPage = () => {
 
   useEffect(() => {
     fetchLocations();
-    loadRoutes();
   }, []);
-
-  const loadRoutes = async () => {
-    try {
-      const routeIds = ['R001', 'R002'];
-      const routeColors = ['#3b82f6', '#10b981']; // xanh dương, xanh lá
-      const routeData = {};
-      
-      for (let i = 0; i < routeIds.length; i++) {
-        const routeId = routeIds[i];
-        try {
-          const response = await axios.get(`${API_ENDPOINTS.ROUTES}/${routeId}/waypoints`);
-          const data = response.data;
-          routeData[routeId] = {
-            waypoints: data.waypoints || [],
-            routeName: data.routeName || routeId,
-            color: routeColors[i],
-          };
-        } catch (err) {
-          console.warn(`Không tải được route ${routeId}:`, err);
-        }
-      }
-      setRoutes(routeData);
-    } catch (err) {
-      console.error('Lỗi khi load routes:', err);
-    }
-  };
 
   useEffect(() => {
     const term = searchTerm.toLowerCase();
@@ -88,6 +61,14 @@ const LocationsPage = () => {
     );
     setFilteredLocations(filtered);
   }, [searchTerm, locations]);
+
+  // Fetch routes khi modal mở
+  useEffect(() => {
+    if (showModal) {
+      console.log("🚀 Modal opened, fetching routes...");
+      fetchRoutes();
+    }
+  }, [showModal]);
 
   const fetchLocations = async () => {
     try {
@@ -101,6 +82,45 @@ const LocationsPage = () => {
       toast.error("Không thể tải danh sách điểm dừng");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch routes R001 và R002 để hiển thị trên bản đồ
+  const fetchRoutes = async () => {
+    try {
+      console.log("🚀 Đang tải tuyến đường...");
+      const response = await axios.get(`${API_ENDPOINTS.ROUTES}`);
+      const allRoutes = response.data;
+      console.log("📍 Tất cả routes:", allRoutes);
+      
+      // Lọc chỉ lấy R001 và R002
+      const filteredRoutes = allRoutes.filter(route => 
+        route.id === 'R001' || route.id === 'R002'
+      );
+      console.log("✅ Routes đã lọc (R001, R002):", filteredRoutes);
+      
+      // Lấy waypoints cho mỗi route
+      const routesWithWaypoints = await Promise.all(
+        filteredRoutes.map(async (route) => {
+          try {
+            console.log(`📌 Đang tải waypoints cho ${route.id}...`);
+            const waypointsRes = await axios.get(`${API_ENDPOINTS.ROUTES}/${route.id}/waypoints`);
+            console.log(`✅ Waypoints cho ${route.id}:`, waypointsRes.data);
+            return {
+              ...route,
+              waypoints: waypointsRes.data || []
+            };
+          } catch (err) {
+            console.error(`❌ Lỗi khi tải waypoints cho ${route.id}:`, err);
+            return { ...route, waypoints: [] };
+          }
+        })
+      );
+      
+      console.log("🎯 Routes với waypoints cuối cùng:", routesWithWaypoints);
+      setRoutes(routesWithWaypoints);
+    } catch (error) {
+      console.error("❌ Lỗi khi tải tuyến đường:", error);
     }
   };
 
@@ -453,10 +473,12 @@ const LocationsPage = () => {
                     Vị trí trên bản đồ
                   </label>
                   <p className="text-xs text-gray-500 mb-2">
-                    Nhấp vào bản đồ để chọn vị trí điểm dừng (hiển thị tuyến R001, R002)
+                    Nhấp vào bản đồ để chọn vị trí điểm dừng
                   </p>
                   <div className="h-[500px] rounded-lg overflow-hidden border-2 border-gray-300">
+                    {console.log("🗺️ Rendering map với routes:", routes)}
                     <MapContainer
+                      key={showModal ? 'map-open' : 'map-closed'} // Force re-render
                       center={[mapPosition?.lat || 10.762622, mapPosition?.lng || 106.660172]}
                       zoom={13}
                       style={{ height: '100%', width: '100%' }}
@@ -467,26 +489,57 @@ const LocationsPage = () => {
                       />
                       
                       {/* Hiển thị tuyến đường R001 và R002 */}
-                      {Object.entries(routes).map(([routeId, routeInfo]) => {
-                        const { waypoints, color, routeName } = routeInfo;
-                        if (!waypoints || waypoints.length === 0) return null;
-                        const positions = waypoints.map(wp => [wp.latitude, wp.longitude]);
+                      {routes.map((route) => {
+                        console.log(`🔍 Processing route ${route.id}:`, route);
+                        
+                        if (!route.waypoints || route.waypoints.length < 2) {
+                          console.log(`⚠️ Route ${route.id} không đủ waypoints`);
+                          return null;
+                        }
+                        
+                        const positions = route.waypoints
+                          .sort((a, b) => a.waypoint_order - b.waypoint_order)
+                          .map(wp => [
+                            parseFloat(wp.Location?.latitude || wp.latitude),
+                            parseFloat(wp.Location?.longitude || wp.longitude)
+                          ])
+                          .filter(pos => !isNaN(pos[0]) && !isNaN(pos[1]));
+
+                        console.log(`📍 Positions cho ${route.id}:`, positions);
+
+                        const color = route.id === 'R001' ? '#3B82F6' : '#10B981'; // Blue cho R001, Green cho R002
                         
                         return (
-                          <React.Fragment key={routeId}>
-                            <Polyline
-                              positions={positions}
-                              color={color}
-                              weight={3}
-                              opacity={0.6}
-                            />
-                          </React.Fragment>
+                          <Polyline
+                            key={route.id}
+                            positions={positions}
+                            color={color}
+                            weight={4}
+                            opacity={0.7}
+                          />
                         );
                       })}
                       
+                      {/* Marker cho điểm đang chọn */}
                       <LocationMarker position={mapPosition} setPosition={setMapPosition} />
                     </MapContainer>
                   </div>
+                  
+                  {/* Legend */}
+                  {routes.length > 0 && (
+                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-xs font-semibold text-gray-700 mb-2">Tuyến đường:</p>
+                      {routes.map(route => (
+                        <div key={route.id} className="flex items-center space-x-2 text-xs text-gray-600">
+                          <div 
+                            className="w-8 h-1 rounded"
+                            style={{ backgroundColor: route.id === 'R001' ? '#3B82F6' : '#10B981' }}
+                          />
+                          <span>{route.id} - {route.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -334,10 +334,16 @@ const driverController = {
 
   // 8. Tài xế cập nhật trạng thái học sinh: 'pickup' (đã đón) hoặc 'dropoff' (đã tới)
   async updateStudentStatus(req, res, next) {
+    console.log("[updateStudentStatus] START - req.user:", JSON.stringify(req.user));
+    console.log("[updateStudentStatus] req.params:", JSON.stringify(req.params));
+    console.log("[updateStudentStatus] req.body:", JSON.stringify(req.body));
+    
     try {
       const userId = req.user.id;
       const studentId = req.params.id;
       const { action } = req.body; // expected: 'pickup' or 'dropoff'
+
+      console.log("[updateStudentStatus] userId:", userId, "studentId:", studentId, "action:", action);
 
       if (!action || !["pickup", "dropoff"].includes(action)) {
         return res
@@ -347,6 +353,7 @@ const driverController = {
 
       // Tìm driver theo user
       const driver = await db.Driver.findOne({ where: { userId: userId } });
+      console.log("[updateStudentStatus] driver found:", driver?.id);
       if (!driver) {
         return res
           .status(404)
@@ -367,7 +374,10 @@ const driverController = {
       }
 
       // Tìm student và đảm bảo student.assigned_bus_id thuộc về busIds
-      const student = await db.Student.findOne({ where: { id: studentId } });
+      const student = await db.Student.findOne({ 
+        where: { id: studentId },
+        include: [{ model: db.Parent, as: 'Parent' }]
+      });
       if (!student) {
         return res
           .status(404)
@@ -387,17 +397,39 @@ const driverController = {
       }
 
       // Thực hiện cập nhật theo action
+      let notifMessage = "";
+      let notifTitle = "Thông báo đưa đón";
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
       if (action === "pickup") {
         await db.Student.update(
           { status: "IN_BUS" },
           { where: { id: studentId } }
         );
+        notifMessage = `Học sinh ${student.name} đã được đón lên xe lúc ${timeString}.`;
       } else if (action === "dropoff") {
-        // Khi đã tới nơi, đánh dấu 'ARRIVED' và gỡ assigned_bus_id để học sinh không còn hiện trên danh sách tài xế
+        // Khi đã tới nơi, chuyển về WAITING để sẵn sàng cho chuyến tiếp theo
         await db.Student.update(
-          { status: "ARRIVED", assigned_bus_id: null },
+          { status: "WAITING" },
           { where: { id: studentId } }
         );
+        notifMessage = `Học sinh ${student.name} đã được trả xuống xe an toàn lúc ${timeString}.`;
+      }
+
+      // Tạo thông báo cho phụ huynh nếu có tài khoản
+      if (student.Parent && student.Parent.userId) {
+        try {
+            await db.Notification.create({
+                userId: student.Parent.userId,
+                title: notifTitle,
+                message: notifMessage,
+                type: 'STUDENT_STATUS'
+            });
+            console.log(`🔔 Đã tạo thông báo cho phụ huynh ${student.Parent.id}`);
+        } catch (notifError) {
+            console.error("Lỗi khi tạo thông báo:", notifError);
+        }
       }
 
       return res
