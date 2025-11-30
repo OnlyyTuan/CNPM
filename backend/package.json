@@ -7,6 +7,9 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "import-db": "node scripts/import_db.js",
+    "create-chat-table": "node scripts/createChatTable.js",
+    "test-chat-api": "node scripts/testChatApi.js",
+    "create-sample-data": "node scripts/create_sample_data.js",
     "test": "jest"
   },
   "keywords": [],

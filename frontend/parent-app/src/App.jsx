@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Notifications from './pages/Notifications';
+import LiveLocationPage from './pages/LiveLocationPage';
 import Layout from './components/Layout';
 
 const PrivateRoute = ({ children }) => {
@@ -22,6 +23,7 @@ function App() {
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="notifications" element={<Notifications />} />
+          <Route path="live" element={<LiveLocationPage />} />
         </Route>
       </Routes>
     </Router>

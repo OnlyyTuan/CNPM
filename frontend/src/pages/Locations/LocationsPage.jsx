@@ -6,9 +6,10 @@ import { Search, Plus, Edit, Trash2, MapPin, X } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../config/api.config";
-import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import RoutingPolyline from "../../components/RoutingPolyline";
 
 // Fix Leaflet default icon
 const DefaultIcon = L.icon({
@@ -40,6 +41,7 @@ const LocationsPage = () => {
   const [editingLocation, setEditingLocation] = useState(null);
   const [mapPosition, setMapPosition] = useState(null);
   const [routes, setRoutes] = useState([]);
+  const [selectedRouteIds, setSelectedRouteIds] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -93,12 +95,13 @@ const LocationsPage = () => {
         return;
       }
       
-      const filteredRoutes = allRoutes.filter(route => 
-        route.id === 'R001' || route.id === 'R002'
-      );
-      
+      // Show up to 3 current routes on the map to help placing stops.
+      // If specific route IDs are required, update this logic accordingly.
+      // We fetch all routes and waypoints, then select which to display.
+      const all = Array.isArray(allRoutes) ? allRoutes : [];
+
       const routesWithWaypoints = await Promise.all(
-        filteredRoutes.map(async (route) => {
+        all.map(async (route) => {
           try {
             const waypointsRes = await axios.get(`${API_ENDPOINTS.ROUTES}/${route.id}/waypoints`);
             const data = waypointsRes.data;
@@ -113,8 +116,13 @@ const LocationsPage = () => {
           }
         })
       );
-      
       setRoutes(routesWithWaypoints);
+
+      // By default select up to 3 newest routes (assume API returns in creation order)
+      const defaultSelected = (routesWithWaypoints.length > 3)
+        ? routesWithWaypoints.slice(-3).map(r => r.id)
+        : routesWithWaypoints.map(r => r.id);
+      setSelectedRouteIds(defaultSelected);
     } catch (error) {
       console.error("Lỗi khi tải tuyến đường:", error);
       setRoutes([]);
@@ -484,7 +492,7 @@ const LocationsPage = () => {
                       />
                       
                       {/* Hiển thị tuyến đường R001 và R002 */}
-                      {Array.isArray(routes) && routes.map((route) => {
+                      {Array.isArray(routes) && routes.filter(r => selectedRouteIds.includes(r.id)).map((route) => {
                         try {
                           if (!route || !route.waypoints || route.waypoints.length < 2) return null;
                           
@@ -495,15 +503,19 @@ const LocationsPage = () => {
 
                           if (positions.length < 2) return null;
 
-                          const color = route.id === 'R001' ? '#3B82F6' : '#10B981';
-                          
+                          // Pick a distinct color per route (up to 3)
+                          const colors = ['#3B82F6', '#10B981', '#F59E0B'];
+                          const displayed = routes.filter(r => selectedRouteIds.includes(r.id));
+                          const idx = Math.min(2, displayed.findIndex(r => r.id === route.id));
+                          const color = colors[idx] || '#3B82F6';
+
+                          // Use RoutingPolyline which calls OSRM to draw driving route
                           return (
-                            <Polyline
+                            <RoutingPolyline
                               key={route.id}
-                              positions={positions}
+                              waypoints={route.waypoints}
                               color={color}
-                              weight={4}
-                              opacity={0.7}
+                              routeName={`${route.id} - ${route.name || ''}`}
                             />
                           );
                         } catch (err) {
@@ -517,18 +529,44 @@ const LocationsPage = () => {
                   </div>
                   
                   {/* Legend */}
-                  {routes.length > 0 && (
+                      {routes.length > 0 && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs font-semibold text-gray-700 mb-2">Tuyến đường:</p>
-                      {routes.map(route => (
-                        <div key={route.id} className="flex items-center space-x-2 text-xs text-gray-600">
-                          <div 
-                            className="w-8 h-1 rounded"
-                            style={{ backgroundColor: route.id === 'R001' ? '#3B82F6' : '#10B981' }}
-                          />
-                          <span>{route.id} - {route.name}</span>
-                        </div>
-                      ))}
+                      <p className="text-xs font-semibold text-gray-700 mb-2">Tuyến đường (chọn để hiển thị):</p>
+                      <div className="grid grid-cols-1 gap-2">
+                        {routes.map((route, i) => {
+                          const checked = selectedRouteIds.includes(route.id);
+                          return (
+                            <label key={route.id} className="flex items-center space-x-2 text-sm text-gray-700">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => {
+                                  setSelectedRouteIds(prev => {
+                                    if (prev.includes(route.id)) return prev.filter(id => id !== route.id);
+                                    return [...prev, route.id];
+                                  });
+                                }}
+                                className="w-4 h-4"
+                              />
+                              <span className="ml-1">{route.id} - {route.name || 'Không tên'}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {/* Legend */}
+                      <div className="mt-3">
+                        <p className="text-xs font-semibold text-gray-700 mb-2">Chú giải:</p>
+                        {routes.filter(r => selectedRouteIds.includes(r.id)).map((route, idx) => {
+                          const colors = ['#3B82F6', '#10B981', '#F59E0B'];
+                          const color = colors[idx] || colors[0];
+                          return (
+                            <div key={route.id} className="flex items-center space-x-2 text-xs text-gray-600">
+                              <div className="w-8 h-1 rounded" style={{ backgroundColor: color }} />
+                              <span>{route.id} - {route.name}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>

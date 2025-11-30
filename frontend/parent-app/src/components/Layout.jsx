@@ -27,6 +27,7 @@ const Layout = () => {
   const navItems = [
     { path: '/dashboard', label: 'Trang chủ', icon: Home },
     { path: '/notifications', label: 'Thông báo', icon: Bell },
+    { path: '/live', label: 'Vị trí xe', icon: Bus },
   ];
 
   // Check active route

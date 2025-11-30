@@ -251,24 +251,48 @@ const LiveLocationPage = () => {
             
             {/* Hiển thị tất cả điểm dừng (stops) */}
             {stops.map((stop) => {
+              // Use orange flag so stops are easy to spot on the live map
+              const stopColor = '#F97316'; // orange
+              // Prettier flag SVG: orange gradient, subtle shadow and 20% larger
               const stopIcon = L.divIcon({
                 className: '',
-                html: '<div style="font-size:16px;">🚏</div>',
-                iconSize: [16, 16],
-                iconAnchor: [8, 16],
-                popupAnchor: [0, -16],
+                html: `
+                  <svg width="34" height="34" viewBox="0 0 34 34" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                    <defs>
+                      <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+                        <stop offset="0%" stop-color="#FDBA74" />
+                        <stop offset="100%" stop-color="#FB923C" />
+                      </linearGradient>
+                      <filter id="s" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#000" flood-opacity="0.2"/>
+                      </filter>
+                    </defs>
+                    <g filter="url(#s)">
+                      <!-- pole (darker for visibility on all backgrounds) -->
+                      <rect x="5" y="3" width="2" height="26" rx="1" fill="#374151" stroke="#0f172a" stroke-width="0.4" />
+                      <!-- triangular flag (orange gradient) -->
+                      <polygon points="7,5 26,10 7,15" fill="url(#g1)" stroke="#ffffff" stroke-width="0.8" />
+                      <!-- small circular base for nicer look -->
+                      <circle cx="6" cy="30" r="2.2" fill="#374151" stroke="#0f172a" stroke-width="0.3" />
+                    </g>
+                  </svg>
+                `,
+                iconSize: [34, 34],
+                // anchor so that the tip of the pole points to the coordinate
+                iconAnchor: [10, 32],
+                popupAnchor: [10, -26],
               });
-              
+
               return (
                 <Marker
                   key={stop.id}
                   position={[stop.latitude, stop.longitude]}
                   icon={stopIcon}
-                  zIndexOffset={100}
+                  zIndexOffset={200}
                 >
                   <Popup>
                     <div>
-                      <strong className="text-red-600">{stop.name}</strong>
+                              <strong style={{ color: stopColor }}>{stop.name}</strong>
                       <br />
                       <span className="text-sm text-gray-600">{stop.address || 'Không có địa chỉ'}</span>
                       <br />

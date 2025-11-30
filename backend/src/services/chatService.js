@@ -5,6 +5,7 @@ const { Op } = require("sequelize");
 
 const ChatMessage = db.ChatMessage;
 const User = db.User;
+const Notification = db.Notification;
 
 /**
  * Send a message from one user to another
@@ -30,6 +31,24 @@ const sendMessage = async (senderId, receiverId, message) => {
       isRead: false,
       createdAt: new Date(),
     });
+
+    // Also create a Notification for the receiver so the message appears
+    // in the notification list (table `notification` created by create-notification.sql)
+    try {
+      const senderInfo = sender || (await User.findByPk(senderId, { attributes: ['id', 'username'] }));
+      await Notification.create({
+        id: uuidv4(),
+        userId: receiverId,
+        title: `Tin nhắn mới từ ${senderInfo ? senderInfo.username : senderId}`,
+        message: message,
+        type: 'CHAT',
+        isRead: false,
+        createdAt: new Date(),
+      });
+    } catch (notifErr) {
+      // Log and continue — do not fail the chat send if notification fails
+      console.warn('Failed to create notification for chat message:', notifErr && notifErr.message ? notifErr.message : notifErr);
+    }
 
     return chatMessage;
   } catch (error) {

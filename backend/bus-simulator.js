@@ -3,7 +3,7 @@
 
 const axios = require("axios");
 
-const BASE_URL = "http://localhost:5000/api/v1";
+const BASE_URL = process.env.BASE_URL || "http://localhost:5000/api/v1";
 
 // Waypoints cho từng tuyến (sẽ load từ API)
 const ROUTE_WAYPOINTS = {};
@@ -14,9 +14,36 @@ const ROUTE_OSRM_PATHS = {};
 // Cấu hình xe bus (sẽ load động từ database)
 let buses = [];
 
+// Sample fallback data (used when backend is unreachable or returns no buses)
+const SAMPLE_ROUTES = {
+  R_SAMPLE_1: {
+    id: "R_SAMPLE_1",
+    routeName: "Tuyến mẫu 1",
+  },
+};
+
+const SAMPLE_WAYPOINTS = {
+  R_SAMPLE_1: [
+    { id: "R_SAMPLE_1_WP_1", sequence: 1, latitude: 10.76292, longitude: 106.660236, stop_name: "Điểm A" },
+    { id: "R_SAMPLE_1_WP_2", sequence: 2, latitude: 10.76300, longitude: 106.66021, stop_name: "Điểm B" },
+    { id: "R_SAMPLE_1_WP_3", sequence: 3, latitude: 10.81532, longitude: 106.70294, stop_name: "Điểm C" },
+  ],
+};
+
+const SAMPLE_BUSES = [
+  {
+    id: "BUS_SAMPLE_1",
+    license_plate: "B001",
+    route_id: "R_SAMPLE_1",
+    status: "ACTIVE",
+  },
+];
+
+
 // Load waypoints từ API và OSRM route
 async function loadRouteWaypoints(routeId) {
   try {
+    // Try to load from server first
     const response = await axios.get(`${BASE_URL}/routes/${routeId}/waypoints`);
     ROUTE_WAYPOINTS[routeId] = response.data.waypoints;
     console.log(
@@ -28,6 +55,14 @@ async function loadRouteWaypoints(routeId) {
 
     return true;
   } catch (error) {
+    // Nếu backend không trả về, kiểm tra fallback SAMPLE_WAYPOINTS
+    if (SAMPLE_WAYPOINTS[routeId]) {
+      ROUTE_WAYPOINTS[routeId] = SAMPLE_WAYPOINTS[routeId];
+      console.warn(`⚠️ Không thể load waypoints từ server cho ${routeId}. Sử dụng dữ liệu mẫu.`);
+      await loadOSRMRoute(routeId);
+      return true;
+    }
+
     console.error(`❌ Lỗi load waypoints cho ${routeId}:`, error.message);
     return false;
   }
@@ -93,30 +128,80 @@ async function loadBusesFromAPI() {
     console.log("📡 Đang tải danh sách xe bus từ server...");
     const response = await axios.get(`${BASE_URL}/buses`);
     const allBuses = response.data;
-
     // Lọc các xe đã được phân công tuyến và đang ACTIVE
-    const activeBuses = allBuses
-      .filter((bus) => bus.route_id && bus.status === "ACTIVE")
-      .map((bus) => ({
-        id: bus.id,
-        name: `Xe ${bus.license_plate}`,
-        routeId: bus.route_id,
-        currentLat: null,
-        currentLng: null,
-        osrmIndex: 0, // Index trên OSRM path
-        speed: Math.floor(Math.random() * 20) + 25, // Random 25-45 km/h
-      }));
+    const activeBuses = Array.isArray(allBuses)
+      ? allBuses
+          .filter((bus) => bus.route_id && bus.status === "ACTIVE")
+          .map((bus) => ({
+            id: bus.id,
+            name: `Xe ${bus.license_plate}`,
+            routeId: bus.route_id,
+            currentLat: null,
+            currentLng: null,
+            osrmIndex: 0, // Index trên OSRM path
+            speed: Math.floor(Math.random() * 20) + 25, // Random 25-45 km/h
+          }))
+      : [];
 
-    buses = activeBuses;
-    console.log(`✅ Tìm thấy ${buses.length} xe đang hoạt động:`);
-    buses.forEach((bus) => {
-      console.log(`   - ${bus.name} (${bus.id}) → Tuyến ${bus.routeId}`);
-    });
+    if (activeBuses.length > 0) {
+      buses = activeBuses;
+      console.log(`✅ Tìm thấy ${buses.length} xe đang hoạt động:`);
+      buses.forEach((bus) => {
+        console.log(`   - ${bus.name} (${bus.id}) → Tuyến ${bus.routeId}`);
+      });
+      return true;
+    }
 
+    // Nếu backend trả về rỗng, dùng dữ liệu mẫu để phát triển local
+    console.warn("⚠️ Không tìm thấy xe ACTIVE từ server. Sử dụng dữ liệu mẫu local.");
+    buses = SAMPLE_BUSES.map((bus) => ({
+      id: bus.id,
+      name: `Xe ${bus.license_plate}`,
+      routeId: bus.route_id,
+      currentLat: null,
+      currentLng: null,
+      osrmIndex: 0,
+      speed: Math.floor(Math.random() * 20) + 25,
+    }));
+    // ensure route waypoints exist for sample routes
+    for (const r of Object.keys(SAMPLE_ROUTES)) {
+      ROUTE_WAYPOINTS[r] = SAMPLE_WAYPOINTS[r] || [];
+      await loadOSRMRoute(r);
+    }
+    buses.forEach((bus) => console.log(`   - ${bus.name} (${bus.id}) → Tuyến ${bus.routeId} (sample)`));
     return buses.length > 0;
   } catch (error) {
-    console.error("❌ Lỗi load buses từ API:", error.message);
-    return false;
+    // Thêm logging chi tiết cho lỗi HTTP/axios
+    if (error.response) {
+      console.error(
+        "❌ Lỗi load buses từ API: status=",
+        error.response.status,
+        "data=",
+        JSON.stringify(error.response.data)
+      );
+    } else if (error.request) {
+      console.error("❌ Lỗi load buses từ API: no response, request sent");
+    } else {
+      console.error("❌ Lỗi load buses từ API:", error.message);
+    }
+
+    // Nếu lỗi kết nối, dùng dữ liệu mẫu
+    console.warn("⚠️ Sử dụng dữ liệu mẫu local do lỗi khi gọi API.");
+    buses = SAMPLE_BUSES.map((bus) => ({
+      id: bus.id,
+      name: `Xe ${bus.license_plate}`,
+      routeId: bus.route_id,
+      currentLat: null,
+      currentLng: null,
+      osrmIndex: 0,
+      speed: Math.floor(Math.random() * 20) + 25,
+    }));
+    for (const r of Object.keys(SAMPLE_ROUTES)) {
+      ROUTE_WAYPOINTS[r] = SAMPLE_WAYPOINTS[r] || [];
+      await loadOSRMRoute(r);
+    }
+    buses.forEach((bus) => console.log(`   - ${bus.name} (${bus.id}) → Tuyến ${bus.routeId} (sample)`));
+    return buses.length > 0;
   }
 }
 
