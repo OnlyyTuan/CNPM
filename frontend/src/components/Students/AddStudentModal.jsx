@@ -54,8 +54,8 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const fetchData = async () => {
       try {
         const [busesRes, locationsRes] = await Promise.all([
-          axios.get("http://localhost:3000/api/v1/buses"),
-          axios.get("http://localhost:3000/api/v1/routes/locations"),
+          axios.get("http://localhost:5000/api/v1/buses"),
+          axios.get("http://localhost:5000/api/v1/routes/locations"),
         ]);
 
         if (busesRes.data && busesRes.data.data) setBuses(busesRes.data.data);
@@ -104,7 +104,7 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
               if (found.length < missingIds.length) {
                 try {
                   const fullRes = await axios.get(
-                    "http://localhost:3000/api/v1/routes/locations"
+                    "http://localhost:5000/api/v1/routes/locations"
                   );
                   const fullList =
                     fullRes.data && fullRes.data.data
@@ -150,7 +150,7 @@ const AddStudentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
     try {
       const res = await axios.get(
-        `http://localhost:3000/api/v1/students/bus/${busId}/stops`
+        `http://localhost:5000/api/v1/students/bus/${busId}/stops`
       );
       console.log(
         `[AddStudentModal] fetchStops(${busId}) response:`,

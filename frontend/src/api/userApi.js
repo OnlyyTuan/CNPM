@@ -4,6 +4,8 @@ const userApi = {
   getAllUsers: () => axiosClient.get("/users"),
   getUserById: (id) => axiosClient.get(`/users/${id}`),
   updateUser: (id, data) => axiosClient.put(`/users/${id}`, data),
+  updateUserPassword: (id, data) =>
+    axiosClient.put(`/users/${id}/password`, data),
   deleteUser: (id) => axiosClient.delete(`/users/${id}`),
 };
 

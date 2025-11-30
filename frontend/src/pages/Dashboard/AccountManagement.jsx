@@ -16,6 +16,7 @@ const AccountManagement = () => {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all"); // 'all' | 'parent' | 'driver'
+  // password column removed - not retrievable
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -297,6 +298,7 @@ const AccountManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {u.email || "-"}
                       </td>
+                      {/* Password column removed */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {u.role}
                       </td>

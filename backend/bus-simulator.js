@@ -3,7 +3,7 @@
 
 const axios = require("axios");
 
-const BASE_URL = "http://localhost:3000/api/v1";
+const BASE_URL = "http://localhost:5000/api/v1";
 
 // Waypoints cho từng tuyến (sẽ load từ API)
 const ROUTE_WAYPOINTS = {};
@@ -22,10 +22,10 @@ async function loadRouteWaypoints(routeId) {
     console.log(
       `✅ Load ${ROUTE_WAYPOINTS[routeId].length} waypoints cho tuyến ${routeId}`
     );
-    
+
     // Load OSRM route cho tuyến này
     await loadOSRMRoute(routeId);
-    
+
     return true;
   } catch (error) {
     console.error(`❌ Lỗi load waypoints cho ${routeId}:`, error.message);
@@ -44,35 +44,45 @@ async function loadOSRMRoute(routeId) {
 
     // Tạo chuỗi tọa độ cho OSRM: lng,lat;lng,lat;...
     const coordinates = waypoints
-      .map(wp => `${wp.longitude},${wp.latitude}`)
-      .join(';');
-    
+      .map((wp) => `${wp.longitude},${wp.latitude}`)
+      .join(";");
+
     // Gọi OSRM API
     const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson`;
     const response = await axios.get(osrmUrl);
-    
-    if (response.data.code === 'Ok' && response.data.routes && response.data.routes.length > 0) {
+
+    if (
+      response.data.code === "Ok" &&
+      response.data.routes &&
+      response.data.routes.length > 0
+    ) {
       // OSRM trả về [lng, lat], chuyển thành [lat, lng]
       const coords = response.data.routes[0].geometry.coordinates.map(
         ([lng, lat]) => ({ lat, lng })
       );
       ROUTE_OSRM_PATHS[routeId] = coords;
-      console.log(`   🗺️  Load ${coords.length} điểm OSRM cho tuyến ${routeId}`);
+      console.log(
+        `   🗺️  Load ${coords.length} điểm OSRM cho tuyến ${routeId}`
+      );
     } else {
-      console.warn(`   ⚠️ OSRM không tìm thấy route cho ${routeId}, dùng đường thẳng`);
+      console.warn(
+        `   ⚠️ OSRM không tìm thấy route cho ${routeId}, dùng đường thẳng`
+      );
       // Fallback: dùng waypoints gốc
-      ROUTE_OSRM_PATHS[routeId] = waypoints.map(wp => ({
+      ROUTE_OSRM_PATHS[routeId] = waypoints.map((wp) => ({
         lat: parseFloat(wp.latitude),
-        lng: parseFloat(wp.longitude)
+        lng: parseFloat(wp.longitude),
       }));
     }
   } catch (error) {
-    console.warn(`   ⚠️ Lỗi load OSRM cho ${routeId}: ${error.message}, dùng đường thẳng`);
+    console.warn(
+      `   ⚠️ Lỗi load OSRM cho ${routeId}: ${error.message}, dùng đường thẳng`
+    );
     // Fallback
     const waypoints = ROUTE_WAYPOINTS[routeId];
-    ROUTE_OSRM_PATHS[routeId] = waypoints.map(wp => ({
+    ROUTE_OSRM_PATHS[routeId] = waypoints.map((wp) => ({
       lat: parseFloat(wp.latitude),
-      lng: parseFloat(wp.longitude)
+      lng: parseFloat(wp.longitude),
     }));
   }
 }
@@ -80,14 +90,14 @@ async function loadOSRMRoute(routeId) {
 // Load danh sách xe bus từ API (lấy các xe đã được phân công tuyến)
 async function loadBusesFromAPI() {
   try {
-    console.log('📡 Đang tải danh sách xe bus từ server...');
+    console.log("📡 Đang tải danh sách xe bus từ server...");
     const response = await axios.get(`${BASE_URL}/buses`);
     const allBuses = response.data;
-    
+
     // Lọc các xe đã được phân công tuyến và đang ACTIVE
     const activeBuses = allBuses
-      .filter(bus => bus.route_id && bus.status === 'ACTIVE')
-      .map(bus => ({
+      .filter((bus) => bus.route_id && bus.status === "ACTIVE")
+      .map((bus) => ({
         id: bus.id,
         name: `Xe ${bus.license_plate}`,
         routeId: bus.route_id,
@@ -96,16 +106,16 @@ async function loadBusesFromAPI() {
         osrmIndex: 0, // Index trên OSRM path
         speed: Math.floor(Math.random() * 20) + 25, // Random 25-45 km/h
       }));
-    
+
     buses = activeBuses;
     console.log(`✅ Tìm thấy ${buses.length} xe đang hoạt động:`);
-    buses.forEach(bus => {
+    buses.forEach((bus) => {
       console.log(`   - ${bus.name} (${bus.id}) → Tuyến ${bus.routeId}`);
     });
-    
+
     return buses.length > 0;
   } catch (error) {
-    console.error('❌ Lỗi load buses từ API:', error.message);
+    console.error("❌ Lỗi load buses từ API:", error.message);
     return false;
   }
 }
@@ -137,7 +147,7 @@ async function updateBusLocation(bus) {
     // Lấy điểm tiếp theo
     const nextIndex = (bus.osrmIndex + 1) % osrmPath.length;
     const nextPoint = osrmPath[nextIndex];
-    
+
     // Tính khoảng cách đến điểm tiếp theo
     const distanceToNext = getDistance(
       bus.currentLat,
@@ -145,13 +155,13 @@ async function updateBusLocation(bus) {
       nextPoint.lat,
       nextPoint.lng
     );
-    
+
     if (distanceToNext < stepSize * 1.5) {
       // Chuyển sang điểm tiếp theo
       bus.currentLat = nextPoint.lat;
       bus.currentLng = nextPoint.lng;
       bus.osrmIndex = nextIndex;
-      
+
       // Kiểm tra xem có đến waypoint chính không
       const waypoints = ROUTE_WAYPOINTS[bus.routeId];
       for (let i = 0; i < waypoints.length; i++) {
@@ -162,11 +172,15 @@ async function updateBusLocation(bus) {
           wp.latitude,
           wp.longitude
         );
-        if (distToWp < 0.0001) { // ~10 mét
-          console.log(`  🚏 ${bus.name} đến ${wp.stop_name || 'điểm ' + i}`);
+        if (distToWp < 0.0001) {
+          // ~10 mét
+          console.log(`  🚏 ${bus.name} đến ${wp.stop_name || "điểm " + i}`);
           // Thay đổi tốc độ ngẫu nhiên
           if (bus.speed > 0) {
-            bus.speed = Math.max(20, Math.min(50, bus.speed + (Math.random() * 10 - 5)));
+            bus.speed = Math.max(
+              20,
+              Math.min(50, bus.speed + (Math.random() * 10 - 5))
+            );
           }
           break;
         }
@@ -174,8 +188,10 @@ async function updateBusLocation(bus) {
     } else {
       // Di chuyển mượt mà về phía điểm tiếp theo (interpolation)
       const ratio = Math.min(0.5, stepSize / distanceToNext); // Giới hạn tối đa 50% mỗi bước
-      bus.currentLat = bus.currentLat + (nextPoint.lat - bus.currentLat) * ratio;
-      bus.currentLng = bus.currentLng + (nextPoint.lng - bus.currentLng) * ratio;
+      bus.currentLat =
+        bus.currentLat + (nextPoint.lat - bus.currentLat) * ratio;
+      bus.currentLng =
+        bus.currentLng + (nextPoint.lng - bus.currentLng) * ratio;
     }
 
     // Gửi vị trí mới lên server
@@ -188,7 +204,9 @@ async function updateBusLocation(bus) {
     console.log(
       `[${new Date().toLocaleTimeString("vi-VN")}] ${bus.name}: ` +
         `lat=${bus.currentLat.toFixed(6)}, lng=${bus.currentLng.toFixed(6)}, ` +
-        `speed=${bus.speed.toFixed(1)} km/h, OSRM ${bus.osrmIndex}/${osrmPath.length}`
+        `speed=${bus.speed.toFixed(1)} km/h, OSRM ${bus.osrmIndex}/${
+          osrmPath.length
+        }`
     );
   } catch (error) {
     console.error(`❌ Lỗi cập nhật ${bus.name}:`, error.message);
@@ -202,33 +220,48 @@ async function startSimulator() {
   // 1. Load danh sách xe bus từ API
   const busesLoaded = await loadBusesFromAPI();
   if (!busesLoaded || buses.length === 0) {
-    console.error('❌ Không tìm thấy xe nào để giả lập. Hãy phân công xe cho tuyến trước!');
+    console.error(
+      "❌ Không tìm thấy xe nào để giả lập. Hãy phân công xe cho tuyến trước!"
+    );
     process.exit(1);
   }
 
   // 2. Load waypoints cho tất cả các tuyến mà xe đang chạy
-  console.log('\n📍 Đang load waypoints từ server...');
-  const uniqueRoutes = [...new Set(buses.map(bus => bus.routeId))];
+  console.log("\n📍 Đang load waypoints từ server...");
+  const uniqueRoutes = [...new Set(buses.map((bus) => bus.routeId))];
   for (const routeId of uniqueRoutes) {
     await loadRouteWaypoints(routeId);
   }
 
   // 3. Kiểm tra waypoints đã load
-  const missingRoutes = buses.filter(bus => !ROUTE_WAYPOINTS[bus.routeId] || ROUTE_WAYPOINTS[bus.routeId].length === 0);
+  const missingRoutes = buses.filter(
+    (bus) =>
+      !ROUTE_WAYPOINTS[bus.routeId] || ROUTE_WAYPOINTS[bus.routeId].length === 0
+  );
   if (missingRoutes.length > 0) {
-    console.error('❌ Một số tuyến không có waypoints:');
-    missingRoutes.forEach(bus => console.error(`   - ${bus.routeId} (cho xe ${bus.name})`));
+    console.error("❌ Một số tuyến không có waypoints:");
+    missingRoutes.forEach((bus) =>
+      console.error(`   - ${bus.routeId} (cho xe ${bus.name})`)
+    );
     process.exit(1);
   }
 
-  console.log(`\n✅ Sẵn sàng theo dõi ${buses.length} xe trên ${uniqueRoutes.length} tuyến:`);
-  uniqueRoutes.forEach(routeId => {
-    const busesOnRoute = buses.filter(b => b.routeId === routeId);
-    const osrmPoints = ROUTE_OSRM_PATHS[routeId] ? ROUTE_OSRM_PATHS[routeId].length : 0;
-    console.log(`   - ${routeId}: ${busesOnRoute.length} xe (${ROUTE_WAYPOINTS[routeId].length} waypoints, ${osrmPoints} điểm OSRM)`);
+  console.log(
+    `\n✅ Sẵn sàng theo dõi ${buses.length} xe trên ${uniqueRoutes.length} tuyến:`
+  );
+  uniqueRoutes.forEach((routeId) => {
+    const busesOnRoute = buses.filter((b) => b.routeId === routeId);
+    const osrmPoints = ROUTE_OSRM_PATHS[routeId]
+      ? ROUTE_OSRM_PATHS[routeId].length
+      : 0;
+    console.log(
+      `   - ${routeId}: ${busesOnRoute.length} xe (${ROUTE_WAYPOINTS[routeId].length} waypoints, ${osrmPoints} điểm OSRM)`
+    );
   });
-  
-  console.log("\n🔄 Cập nhật vị trí mỗi 2 giây. Tốc độ đã tối ưu để xe di chuyển mượt mà.\n");
+
+  console.log(
+    "\n🔄 Cập nhật vị trí mỗi 2 giây. Tốc độ đã tối ưu để xe di chuyển mượt mà.\n"
+  );
 
   // Cập nhật mỗi 2 giây
   setInterval(() => {

@@ -17,6 +17,7 @@ const AccountManagement = () => {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all"); // 'all' | 'parent' | 'driver'
+  // removed showPasswordMap - passwords are not retrievable
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -340,6 +341,7 @@ const AccountManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {u.email || "-"}
                       </td>
+                      {/* Password column removed - passwords are not retrievable */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                         {u.role}
                       </td>
@@ -360,6 +362,7 @@ const AccountManagement = () => {
                           >
                             <Edit size={18} />
                           </button>
+                          {/* per-row reset removed; use Edit -> Reset password action instead */}
                           <button
                             onClick={() => handleDelete(u)}
                             className="text-red-600 hover:text-red-900"
@@ -495,12 +498,14 @@ const AccountManagement = () => {
 };
 
 // Small inline edit form component
-const EditUserForm = ({ user, onSaved, profile }) => {
+const EditUserForm = ({ user, onSaved, profile, onRequestCreate }) => {
   const [email, setEmail] = React.useState(user.email || "");
   const [username, setUsername] = React.useState(user.username || "");
   const [name, setName] = React.useState(
     profile?.fullName || profile?.full_name || profile?.name || ""
   );
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
 
   const handleSave = async () => {
@@ -510,6 +515,20 @@ const EditUserForm = ({ user, onSaved, profile }) => {
         toast.error("Username không được để trống");
         setLoading(false);
         return;
+      }
+
+      // password validation (optional on edit)
+      if (password) {
+        if (password !== confirmPassword) {
+          toast.error("Mật khẩu và xác nhận mật khẩu không khớp");
+          setLoading(false);
+          return;
+        }
+        if (String(password).length < 6) {
+          toast.error("Mật khẩu phải có ít nhất 6 ký tự");
+          setLoading(false);
+          return;
+        }
       }
 
       // Defensive check: avoid sending updates for missing or seeded placeholder IDs
@@ -523,85 +542,36 @@ const EditUserForm = ({ user, onSaved, profile }) => {
 
       // update user basic info; if user row doesn't exist (404) we'll fall back to creating user+profile
       try {
-        await userApi.updateUser(user.id, { email, username });
+        const userPayload = { email, username };
+        await userApi.updateUser(user.id, userPayload);
       } catch (updateErr) {
-        // If user not found (404), try to update parent profile directly (in case parent exists without user)
+        // If user not found (404), open the Create modal prefilled so admin can recreate the missing user/profile.
         if (updateErr?.response?.status === 404) {
+          const prefill = {
+            role: user.role,
+            username,
+            email,
+            fullName: name,
+            id: user.id,
+          };
+          toast(
+            "Người dùng không tồn tại — mở modal tạo tài khoản để tạo mới (vui lòng kiểm tra thông tin)."
+          );
           try {
-            // Try to find a parent linked to this user id
-            const parentsRes = await parentApi.getAllParents();
-            const parentsList = parentsRes?.data ?? parentsRes ?? [];
-            const existing = (parentsList || []).find((p) => {
-              const uid =
-                p.user_id ??
-                p.userId ??
-                (p.UserAccount && p.UserAccount.id) ??
-                null;
-              return String(uid) === String(user.id);
-            });
-
-            if (existing) {
-              // Update parent name directly
-              await parentApi.updateParent(existing.id, {
-                parentData: { fullName: name },
-              });
-              toast.success(
-                "Cập nhật tên phụ huynh thành công (không cần user row)"
-              );
-              emitEntityChange("parent");
-              onSaved && onSaved();
-              setLoading(false);
-              return;
-            }
-
-            // If not a parent, or no parent row found, try driver profile fallback
-            try {
-              const driversRes = await getAllDrivers();
-              const driversList = driversRes?.data ?? driversRes ?? [];
-              const existingDriver = (driversList || []).find((d) => {
-                const uid =
-                  d.user_id ?? d.userId ?? (d.User && d.User.id) ?? null;
-                return String(uid) === String(user.id);
-              });
-              if (existingDriver) {
-                // Update driver name directly
-                await updateDriver(existingDriver.id, {
-                  driverData: { fullName: name },
-                });
-                toast.success(
-                  "Cập nhật tên tài xế thành công (không cần user row)"
-                );
-                emitEntityChange("driver");
-                onSaved && onSaved();
-                setLoading(false);
-                return;
-              }
-            } catch (drvErr) {
-              console.warn("Driver fallback failed", drvErr);
-            }
-
-            // If no parent exists, fall back to opening create modal so admin can create the missing user/profile
-            const prefill = {
-              role: user.role,
-              username,
-              email,
-              fullName: name,
-              id: user.id,
-            };
-            toast(
-              "Người dùng không tồn tại — mở modal tạo tài khoản để tạo mới (vui lòng kiểm tra thông tin)."
-            );
             if (typeof onRequestCreate === "function") {
               onRequestCreate(prefill);
+            } else {
+              console.warn(
+                "EditUserForm: onRequestCreate not provided. Prefill:",
+                prefill
+              );
             }
-            setLoading(false);
-            return;
           } catch (e) {
-            console.error("Failed to handle missing user fallback", e);
-            toast.error("Không thể xử lý trường hợp người dùng không tồn tại.");
-            setLoading(false);
-            return;
+            console.error("Failed to open create modal fallback", e);
+            toast.error("Không thể mở modal tạo tài khoản.");
           }
+          setLoading(false);
+          return;
         }
         // rethrow other errors to be handled by outer catch
         throw updateErr;
@@ -659,6 +629,21 @@ const EditUserForm = ({ user, onSaved, profile }) => {
           ? "parent"
           : "user";
       emitEntityChange(entity);
+      // If admin provided a new password in the edit form, call password endpoint
+      if (password) {
+        try {
+          await userApi.updateUserPassword(user.id, { password });
+          toast.success("Cập nhật mật khẩu thành công");
+        } catch (pwErr) {
+          console.error("Update password failed", pwErr);
+          const msg =
+            pwErr?.response?.data?.message ||
+            pwErr?.message ||
+            "Cập nhật mật khẩu thất bại";
+          toast.error(msg);
+        }
+      }
+
       onSaved && onSaved();
     } catch (err) {
       console.error(err);
@@ -716,6 +701,27 @@ const EditUserForm = ({ user, onSaved, profile }) => {
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
+      <div>
+        <label className="text-sm">Mật khẩu (để trống nếu không đổi)</label>
+        <input
+          className="border px-2 py-1 w-full"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Nhập mật khẩu mới nếu muốn"
+        />
+      </div>
+      <div>
+        <label className="text-sm">Xác nhận mật khẩu</label>
+        <input
+          className="border px-2 py-1 w-full"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Xác nhận mật khẩu mới"
+        />
+      </div>
+
       <div className="flex justify-end gap-2">
         <button className="px-3 py-1 border rounded" onClick={onSaved}>
           Hủy

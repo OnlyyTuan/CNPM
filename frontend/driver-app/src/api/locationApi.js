@@ -1,5 +1,5 @@
 import axios from "axios";
-const API_URL = "http://localhost:3000/api/v1";
+const API_URL = "http://localhost:5000/api/v1";
 
 export const getLocations = async () => {
   const res = await axios.get(`${API_URL}/routes/locations`);

@@ -5,7 +5,7 @@ import userApi from "../../api/userApi";
 import { getAllDrivers, createDriver, updateDriver } from "../../api/driverApi";
 import { toast } from "react-hot-toast";
 import { emitEntityChange } from "../../utils/eventBus";
-import { Plus } from "lucide-react";
+import { Plus, Eye, EyeOff } from "lucide-react";
 
 const CreateAccountModal = ({
   open,
@@ -23,6 +23,9 @@ const CreateAccountModal = ({
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [prefillId, setPrefillId] = useState(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -69,6 +72,8 @@ const CreateAccountModal = ({
       setUsername("");
       setEmail("");
       setPassword("");
+      setConfirmPassword("");
+      setPrefillId("");
       setName("");
       setPhone("");
       setLicenseNumber("");
@@ -92,11 +97,50 @@ const CreateAccountModal = ({
     e.preventDefault();
     setLoading(true);
 
+    // Validate password / confirm
+    if (!isEdit) {
+      // Create flows: parents must provide password; drivers optional
+      if (role === "parent") {
+        if (!password) {
+          toast.error("Vui lòng nhập mật khẩu cho phụ huynh");
+          setLoading(false);
+          return;
+        }
+        if (password !== confirmPassword) {
+          toast.error("Mật khẩu và xác nhận mật khẩu không khớp");
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (role === "driver" && password) {
+        if (password !== confirmPassword) {
+          toast.error("Mật khẩu và xác nhận mật khẩu không khớp");
+          setLoading(false);
+          return;
+        }
+      }
+    } else {
+      // Edit flows: password is optional; if provided, must match confirm
+      if (password) {
+        if (password !== confirmPassword) {
+          toast.error("Mật khẩu và xác nhận mật khẩu không khớp");
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
     const userData = {
       username: username?.trim(),
       email: email?.trim(),
-      password: password || "changeme123",
     };
+    if (password) {
+      userData.password = password;
+    } else if (!isEdit) {
+      // creation fallback password
+      userData.password = "changeme123";
+    }
 
     // If modal was opened to create from an existing prefill (missing user), preserve the id
     if (prefillId) userData.id = prefillId;
@@ -269,6 +313,11 @@ const CreateAccountModal = ({
         {/* Role selector - hidden when hideRoleSelector is true */}
         {!(hideRoleSelector || forceRole || autoDetectedDriver) && (
           <div className="form-group">
+            <label
+              style={{ marginBottom: 6, display: "block", fontWeight: 700 }}
+            >
+              Role
+            </label>
             <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
               <label
                 className={`px-3 py-1 rounded-full cursor-pointer text-sm font-medium ${
@@ -300,45 +349,92 @@ const CreateAccountModal = ({
           </div>
         )}
 
-        {/* Account fields: hide for driver-only flows to simplify UI */}
-        {role !== "driver" && (
+        {/* Account fields: show for both parent and driver.
+            For parents the fields are required; for drivers they are optional (you can provide username/email/password if desired). */}
+        <>
+          <div className="form-group">
+            <label>ID</label>
+            <input
+              value={prefillId || ""}
+              onChange={(e) => setPrefillId(e.target.value)}
+              placeholder="User ID (optional)"
+            />
+          </div>
+          <div className="form-group">
+            <label>Username {role !== "driver" ? "*" : ""}</label>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Username"
+              required={role !== "driver"}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Email {role !== "driver" ? "*" : ""}</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required={role !== "driver"}
+            />
+          </div>
+
           <>
             <div className="form-group">
-              <label>Username *</label>
-              <input
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Username"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Email *</label>
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                required
-              />
-            </div>
-
-            {!isEdit && (
-              <div className="form-group">
-                <label>Password *</label>
+              <label>Password {role !== "driver" ? "*" : ""}</label>
+              <div className="password-wrapper">
                 <input
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Password"
-                  required
+                  required={!isEdit && role !== "driver"}
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
-            )}
+            </div>
+
+            <div className="form-group">
+              <label>Xác nhận password {role !== "driver" ? "*" : ""}</label>
+              <div className="password-wrapper">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Xác nhận password"
+                  required={(!isEdit && role !== "driver") || Boolean(password)}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword((s) => !s)}
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff size={16} />
+                  ) : (
+                    <Eye size={16} />
+                  )}
+                </button>
+              </div>
+            </div>
           </>
-        )}
+        </>
 
         <div className="form-group">
-          <label>Họ và tên</label>
+          <label>Tên</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -400,6 +496,25 @@ const CreateAccountModal = ({
           border-radius: 6px;
           font-size: 14px;
           box-sizing: border-box;
+        }
+        .password-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .password-wrapper input {
+          padding-right: 40px;
+        }
+        .password-toggle {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          padding: 6px;
+          color: #495057;
         }
         .modal-footer {
           display: flex;

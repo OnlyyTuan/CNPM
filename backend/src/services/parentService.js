@@ -2,6 +2,8 @@
 
 const { Parent, Student, User, Bus, Location } = require("../db");
 const { sequelize } = require("../db");
+const bcrypt = require("bcryptjs");
+const config = require("../config/app.config");
 
 const parentService = {
   // 1. Lấy danh sách Phụ huynh kèm danh sách Học sinh (ĐÃ FIX)
@@ -82,12 +84,26 @@ const parentService = {
     const t = await sequelize.transaction();
     try {
       // Bước 1: Tạo User
-      const newUser = await User.create(
-        { ...userData, role: "parent" },
-        { transaction: t }
-      ); // Bước 2: Tạo Parent
+      // Nếu client không cung cấp `id`, tạo ID tạm thời ở backend để đảm bảo trường NOT NULL
+      const userId = (userData && userData.id) || `U${Date.now()}`;
+      // Ensure password is hashed before creating User
+      const rawPassword = (userData && userData.password) || "123456";
+      const hashedPassword = await bcrypt.hash(rawPassword, config.SALT_ROUNDS);
+      const userPayload = {
+        id: userId,
+        ...userData,
+        password: hashedPassword,
+        role: "parent",
+      };
+      const newUser = await User.create(userPayload, { transaction: t });
+
+      // Bước 2: Tạo Parent (tạo id nếu client không cung cấp)
+      const parentId =
+        (parentData && (parentData.id || parentData.parent_id)) ||
+        `P${Date.now()}`;
       const newParent = await Parent.create(
         {
+          id: parentId,
           ...parentData,
           userId: newUser.id,
         },
